@@ -227,9 +227,17 @@ function initCanvas(): (() => void) | undefined {
   }
   const canvasEl: HTMLCanvasElement = canvas
   const ctxEl: CanvasRenderingContext2D = ctx
+
+  // 逻辑尺寸（CSS 像素），物理计算与绘制统一用它，避免高 DPI 屏被拉伸发虚
+  let viewW = 0
+  let viewH = 0
   function resize() {
-    canvasEl.width = window.innerWidth
-    canvasEl.height = window.innerHeight
+    const dpr = window.devicePixelRatio || 1
+    viewW = window.innerWidth
+    viewH = window.innerHeight
+    canvasEl.width = Math.round(viewW * dpr)
+    canvasEl.height = Math.round(viewH * dpr)
+    ctxEl.setTransform(dpr, 0, 0, dpr, 0, 0)
   }
   resize()
   window.addEventListener("resize", resize)
@@ -257,20 +265,39 @@ function initCanvas(): (() => void) | undefined {
   window.addEventListener("mouseleave", onMouseLeave)
   window.addEventListener("touchmove", onTouchMove)
 
-  const particles = Array.from({ length: 120 }, () => ({
-    x: Math.random() * canvasEl.width,
-    y: Math.random() * canvasEl.height,
-    vx: (Math.random() - 0.5) * 0.5,
-    vy: (Math.random() - 0.5) * 0.5,
-    size: Math.random() * 1.5 + 1.5,
-    baseSize: 0,
-    // 鼠标接近时的发光强度
-    glow: 0
-  }))
+  // 以 60fps 为基准的速度（px/帧），实际位移按 dt 缩放
+  const FRAME_MS = 1000 / 60
+  const MIN_SPEED = 0.15
+  const MAX_SPEED = 0.4
+  const SPEED_LIMIT = 3
+
+  const particles = Array.from({ length: 120 }, () => {
+    const angle = Math.random() * Math.PI * 2
+    const speed = MIN_SPEED + Math.random() * (MAX_SPEED - MIN_SPEED)
+    return {
+      x: Math.random() * viewW,
+      y: Math.random() * viewH,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      // 漂移方向：angle 缓慢自转，轨迹是缓慢弧线而不是机械直线
+      angle,
+      speed,
+      turn: (Math.random() - 0.5) * 0.012,
+      size: Math.random() * 1.5 + 1.5,
+      baseSize: 0,
+      // 鼠标接近时的发光强度
+      glow: 0
+    }
+  })
   particles.forEach(p => { p.baseSize = p.size })
 
-  function draw() {
-    ctxEl.clearRect(0, 0, canvasEl.width, canvasEl.height)
+  let lastFrame = performance.now()
+  function draw(now: number) {
+    // 帧率归一化：高刷屏（144/165Hz）与 60Hz 下运动速度保持一致
+    const dt = Math.min((now - lastFrame) / FRAME_MS, 3)
+    lastFrame = now
+
+    ctxEl.clearRect(0, 0, viewW, viewH)
 
     // 鼠标光晕（径向渐变背景）
     if (mouse.active) {
@@ -287,6 +314,9 @@ function initCanvas(): (() => void) | undefined {
       ctxEl.fill()
     }
 
+    const glowDecay = Math.pow(0.95, dt)
+    const ease = 1 - Math.pow(0.96, dt)
+
     particles.forEach((p) => {
       // 鼠标互动：排斥效果 + 发光
       if (mouse.active) {
@@ -297,34 +327,50 @@ function initCanvas(): (() => void) | undefined {
         if (dist < maxDist && dist > 0) {
           // 排斥力（越近力越大）
           const force = (1 - dist / maxDist) * 1.5
-          p.vx += (dx / dist) * force
-          p.vy += (dy / dist) * force
+          p.vx += (dx / dist) * force * dt
+          p.vy += (dy / dist) * force * dt
           // 发光强度
           p.glow = 1 - dist / maxDist
         } else {
-          p.glow *= 0.95
+          p.glow *= glowDecay
         }
       } else {
-        p.glow *= 0.95
+        p.glow *= glowDecay
       }
 
-      // 速度阻尼，防止无限加速
-      p.vx *= 0.96
-      p.vy *= 0.96
-      // 最小基础速度，避免完全静止
+      // 漂移方向缓慢自转
+      p.angle += p.turn * dt
+      // 平滑回归基础漂移速度：鼠标推力的余速会自然衰减，不会把粒子定在原地抖
+      p.vx += (Math.cos(p.angle) * p.speed - p.vx) * ease
+      p.vy += (Math.sin(p.angle) * p.speed - p.vy) * ease
+
+      // 限制极限速度，避免多帧叠加后飞出去
       const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy)
-      if (speed < 0.15) {
-        p.vx += (Math.random() - 0.5) * 0.1
-        p.vy += (Math.random() - 0.5) * 0.1
+      if (speed > SPEED_LIMIT) {
+        p.vx = (p.vx / speed) * SPEED_LIMIT
+        p.vy = (p.vy / speed) * SPEED_LIMIT
       }
 
-      p.x += p.vx
-      p.y += p.vy
-      if (p.x <= 0 || p.x >= canvasEl.width) {
-        p.vx = -p.vx
+      p.x += p.vx * dt
+      p.y += p.vy * dt
+      // 撞边反弹：同时翻转漂移方向，否则目标速度会把粒子重新压回墙上
+      if (p.x <= 0) {
+        p.x = 0
+        p.vx = Math.abs(p.vx)
+        p.angle = Math.PI - p.angle
+      } else if (p.x >= viewW) {
+        p.x = viewW
+        p.vx = -Math.abs(p.vx)
+        p.angle = Math.PI - p.angle
       }
-      if (p.y <= 0 || p.y >= canvasEl.height) {
-        p.vy = -p.vy
+      if (p.y <= 0) {
+        p.y = 0
+        p.vy = Math.abs(p.vy)
+        p.angle = -p.angle
+      } else if (p.y >= viewH) {
+        p.y = viewH
+        p.vy = -Math.abs(p.vy)
+        p.angle = -p.angle
       }
 
       // 粒子大小随发光强度变化
@@ -393,7 +439,7 @@ function initCanvas(): (() => void) | undefined {
 
     animation = requestAnimationFrame(draw)
   }
-  draw()
+  requestAnimationFrame(draw)
 
   // 清理函数
   const cleanup = () => {
@@ -545,17 +591,19 @@ onBeforeUnmount(() => {
 
 /* ===== 金属光泽扫光文字（Metallic Shimmer Text） ===== */
 .hero-title {
-  margin: 0 0 14px;
+  /* 必须是块级：inline-flex 会让标题和上面的 .badge-tag 挤在同一行并按基线对齐 */
+  display: flex;
+  width: fit-content;
+  margin: 0 auto 14px;
   font-size: 48px;
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: 2px;
-  display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 12px;
   padding: 10px 24px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+  /* box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2); */
   transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .hero-title:hover {
