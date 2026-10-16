@@ -51,7 +51,7 @@
               <p class="card-sub">{{ today }}</p>
             </div>
           </div>
-          <button class="btn btn-soft btn-sm" @click="getCourses">刷新</button>
+          <button class="btn btn-soft btn-sm" :disabled="coursesRefreshing" @click="refreshCourses">刷新</button>
         </div>
 
         <div v-if="courses.length" class="course-grid">
@@ -124,6 +124,7 @@
                 <th>授课教师</th>
                 <th>签到时间</th>
                 <th>IP 地址</th>
+                <th>来源</th>
                 <th>状态</th>
               </tr>
             </thead>
@@ -134,9 +135,15 @@
                 <td><span class="mono">{{ item.time }}</span></td>
                 <td><span class="mono">{{ item.ip || '-' }}</span></td>
                 <td>
+                  <span v-if="Number(item.is_cross) === 1" class="badge badge-cyan">
+                    {{ item.source_site_name || '其他网站' }}
+                  </span>
+                  <span v-else class="text-muted">{{ item.source_site_name || '-' }}</span>
+                </td>
+                <td>
                   <span
                     class="badge"
-                    :class="Number(item.is_script) === 1 ? 'badge-danger' : statusBadgeClass(item.status)"
+                    :class="Number(item.is_script) === 1 ? 'badge-danger' : (Number(item.is_cross) === 1 ? 'badge-cyan' : statusBadgeClass(item.status))"
                   >{{ item.status_text }}</span>
                 </td>
               </tr>
@@ -174,7 +181,7 @@
               @click="openDatePicker"
             />
             <button class="btn btn-soft btn-sm" @click="resetClassDate">今天</button>
-            <button class="btn btn-soft btn-sm" @click="getClassAttendance">刷新</button>
+            <button class="btn btn-soft btn-sm" :disabled="classRefreshing" @click="refreshClassAttendance">刷新</button>
           </div>
         </div>
 
@@ -258,10 +265,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue"
+import { ref, computed, onMounted, type Ref } from "vue"
 import request from "../api/request"
 import { getDeviceId } from "../utils/device"
 import { collectBrowserFingerprint } from "../utils/fingerprint"
+// 考勤状态 → 徽标样式：与教师端共用同一份映射（原先两边各复制了一份）
+import { attendanceStatusBadgeClass as statusBadgeClass } from "../utils/status"
+import { errorMessage, isAuthError } from "../utils/error"
 import { useRouter } from "vue-router"
 
 const router = useRouter()
@@ -282,6 +292,10 @@ interface Course {
   signed: boolean
   has_active_task: boolean
   task_id: string | null
+  cross_signed?: boolean
+  cross_source_site?: string | null
+  cross_source_site_name?: string | null
+  cross_sign_time?: string | null
 }
 
 interface AttendanceRecord {
@@ -293,6 +307,9 @@ interface AttendanceRecord {
   status: number
   status_text: string
   is_script?: number
+  is_cross?: number
+  source_site?: string | null
+  source_site_name?: string | null
 }
 
 interface ClassCourse {
@@ -347,6 +364,11 @@ const student = ref<Student>({
 const courses = ref<Course[]>([])
 const records = ref<AttendanceRecord[]>([])
 const loading = ref(false)
+
+// 「刷新」按钮防连点状态：true 时按钮禁用，忽略后续点击
+const coursesRefreshing = ref(false)
+const classRefreshing = ref(false)
+
 const filterDate = ref(todayDateStr())
 const classDate = ref("")
 const classAttendance = ref<ClassAttendance>({
@@ -383,16 +405,6 @@ function showToast(msg: string, type: "info" | "success" | "error" = "info") {
   setTimeout(() => (toast.value.show = false), 2500)
 }
 
-function isAuthError(error: unknown): boolean {
-  const s = error as { response?: { status?: number } }
-  return s?.response?.status === 401 || s?.response?.status === 403
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  const e = error as { response?: { data?: { message?: string } } }
-  return e?.response?.data?.message || fallback
-}
-
 /**
  * 判断课程状态
  * 返回值：signed(已签到) | active(签到进行中) | ended(已结束) | not_started(未开始)
@@ -400,10 +412,12 @@ function errorMessage(error: unknown, fallback: string): string {
  * 判定优先级：
  * 1. 已签到 > 签到进行中 > 已结束 > 未开始
  */
-type CourseStatus = "signed" | "active" | "ended" | "not_started"
+type CourseStatus = "signed" | "cross" | "active" | "ended" | "not_started"
 
 function getCourseStatus(course: Course): CourseStatus {
   if (course.signed) return "signed"
+  // 本站没签到，但已从其他站同步回来 → 已在其他网站签到
+  if (course.cross_signed) return "cross"
   if (course.has_active_task) return "active"
 
   // 解析课程时间，判断是否已结束
@@ -423,19 +437,6 @@ function getCourseStatus(course: Course): CourseStatus {
   return "not_started"
 }
 
-function statusBadgeClass(status: number): string {
-  const map: Record<number, string> = {
-    1: "badge-ok",
-    2: "badge-warn",
-    3: "badge-danger",
-    4: "badge-purple",
-    5: "badge-cyan",
-    6: "badge-gray",
-    7: "badge-unsigned"
-  }
-  return map[status] || "badge-off"
-}
-
 /**
  * 课程卡片展示信息
  *
@@ -449,6 +450,7 @@ const COURSE_STATUS_META: Record<CourseStatus, {
   btnText: string
 }> = {
   signed: { badgeClass: "badge-ok", badgeText: "已签到", btnClass: "btn-success", btnText: "已签到" },
+  cross: { badgeClass: "badge-cyan", badgeText: "已在其他网站签到", btnClass: "btn-disabled", btnText: "已在其他网站签到" },
   active: { badgeClass: "badge-blue", badgeText: "签到进行中", btnClass: "btn-primary", btnText: "立即签到" },
   ended: { badgeClass: "badge-off", badgeText: "已结束", btnClass: "btn-disabled", btnText: "已结束" },
   not_started: { badgeClass: "badge-off", badgeText: "未开始", btnClass: "btn-disabled", btnText: "未开始" }
@@ -457,7 +459,15 @@ const COURSE_STATUS_META: Record<CourseStatus, {
 const courseCards = computed(() =>
   courses.value.map(course => {
     const status = getCourseStatus(course)
-    return { course, status, ...COURSE_STATUS_META[status] }
+    const card = { course, status, ...COURSE_STATUS_META[status] }
+
+    // 已在其他网站签到时，把来源站点补进徽标文案
+    if (status === "cross" && course.cross_source_site_name) {
+      card.badgeText = `已在${course.cross_source_site_name}签到`
+      card.btnText = `已在${course.cross_source_site_name}签到`
+    }
+
+    return card
   })
 )
 
@@ -544,7 +554,11 @@ async function getCourses() {
           time: c.time || "",
           signed: !!c.signed,
           has_active_task: !!c.has_active_task,
-          task_id: c.task_id || null
+          task_id: c.task_id || null,
+          cross_signed: !!c.cross_signed,
+          cross_source_site: c.cross_source_site || null,
+          cross_source_site_name: c.cross_source_site_name || null,
+          cross_sign_time: c.cross_sign_time || null
         }))
       }
     }
@@ -573,7 +587,10 @@ async function getRecords() {
         ip: r.ip,
         status: r.status,
         status_text: r.status_text,
-        is_script: r.is_script
+        is_script: r.is_script,
+        is_cross: Number(r.is_cross) || 0,
+        source_site: r.source_site || null,
+        source_site_name: r.source_site_name || null
       }))
     }
   } catch (error: unknown) {
@@ -624,6 +641,40 @@ function resetClassDate() {
 }
 
 /**
+ * 「刷新」按钮防连点
+ *
+ * 「刷新」按钮很容易被连续点击，短时间内会给后端重复发起大量相同请求，
+ * 既造成无谓压力，也会把正常用户推到后端 BURST 爬虫阈值以上。
+ *
+ * 处理方式：
+ *   1. 请求进行中：禁用按钮并忽略后续点击，避免并发重复请求
+ *   2. 请求结束后的冷却时间内：连点同样被忽略，避免接口很快返回后
+ *      被继续连点造成请求风暴
+ *
+ * 注意：仅用于用户点击刷新按钮；签到完成后的内部刷新仍直接调用
+ * getCourses / getClassAttendance，不受冷却影响。
+ */
+const REFRESH_COOLDOWN = 3000
+
+async function withRefreshGuard(flag: Ref<boolean>, task: () => Promise<void>) {
+  if (flag.value) return
+  flag.value = true
+  try {
+    await task()
+  } finally {
+    setTimeout(() => (flag.value = false), REFRESH_COOLDOWN)
+  }
+}
+
+function refreshCourses() {
+  return withRefreshGuard(coursesRefreshing, getCourses)
+}
+
+function refreshClassAttendance() {
+  return withRefreshGuard(classRefreshing, getClassAttendance)
+}
+
+/**
  * 日期控件：点击任意位置直接弹出系统日期选择面板
  *
  * 原生行为是「点文本区域只聚焦单个年/月/日字段」，
@@ -643,7 +694,7 @@ function openDatePicker(event: MouseEvent) {
 
 async function signIn(course: Course) {
   const status = getCourseStatus(course)
-  if (loading.value || status === "signed" || status === "ended" || status === "not_started") return
+  if (loading.value || status === "signed" || status === "cross" || status === "ended" || status === "not_started") return
   loading.value = true
   try {
     let location = ""
@@ -1131,6 +1182,11 @@ onMounted(async () => {
   background: linear-gradient(180deg, #fff 0%, #f7f8ff 100%);
 }
 
+.course-card.status-cross {
+  --stripe: var(--cyan);
+  background: linear-gradient(180deg, #fff 0%, #f2fbfd 100%);
+}
+
 .course-card.status-ended,
 .course-card.status-not_started {
   --stripe: var(--ink-300);
@@ -1204,6 +1260,8 @@ onMounted(async () => {
 .badge-gray { background: #eef1f6; color: #475569; border-color: rgba(71, 85, 105, 0.14); }
 .badge-unsigned { background: #f2f5f9; color: #64748b; border-color: rgba(100, 116, 139, 0.16); }
 .badge-off { background: #f4f6fa; color: var(--ink-400); border-color: rgba(148, 163, 184, 0.2); }
+
+.text-muted { color: var(--ink-400); }
 
 /* ===== 按钮 ===== */
 .btn {

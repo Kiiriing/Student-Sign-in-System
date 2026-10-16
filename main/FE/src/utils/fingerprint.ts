@@ -113,32 +113,3 @@ export async function collectBrowserFingerprint(): Promise<string> {
   if (hits.length === 0) return ""
   return hits.map(h => h.key).join(",")
 }
-
-/**
- * 同步版：只跑不依赖 Promise 的快速检测项
- * 用于在不能用 await 的地方做粗筛
- */
-export function collectBrowserFingerprintSync(): string {
-  const hits: string[] = []
-
-  try {
-    if (navigator.webdriver === true) hits.push("webdriver")
-  } catch {
-    /* ignore */
-  }
-
-  try {
-    if (!navigator.languages || navigator.languages.length === 0) hits.push("no-languages")
-  } catch {
-    /* ignore */
-  }
-
-  try {
-    const cdcKeys = Object.keys(document).filter(k => k.startsWith("cdc_"))
-    if (cdcKeys.length > 0) hits.push("cdc-keys")
-  } catch {
-    /* ignore */
-  }
-
-  return hits.join(",")
-}

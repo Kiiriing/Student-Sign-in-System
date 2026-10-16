@@ -88,6 +88,36 @@
           </svg>
           <span>班级管理</span>
         </button>
+
+        <button
+          type="button"
+          class="nav-item"
+          :class="{ active: activeTab === 'updates' }"
+          @click="activeTab = 'updates'"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="8" y1="13" x2="16" y2="13" />
+            <line x1="8" y1="17" x2="13" y2="17" />
+          </svg>
+          <span>更新日志</span>
+        </button>
+
+        <button
+          type="button"
+          class="nav-item"
+          :class="{ active: activeTab === 'sync' }"
+          @click="activeTab = 'sync'"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12a9 9 0 0 1-15.6 6.3" />
+            <path d="M3 12a9 9 0 0 1 15.6-6.3" />
+            <polyline points="17 3 21 6 17 9" />
+            <polyline points="7 15 3 18 7 21" />
+          </svg>
+          <span>跨站同步</span>
+        </button>
       </nav>
 
       <div class="sidebar-footer">
@@ -221,6 +251,23 @@
                 </div>
               </div>
 
+              <div v-if="accountTab === 'student'" class="table-toolbar">
+                <label class="search-field">
+                  <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7" />
+                    <line x1="16.5" y1="16.5" x2="21" y2="21" />
+                  </svg>
+                  <input
+                    v-model="studentNoFilter"
+                    class="search-input"
+                    type="text"
+                    placeholder="搜索姓名 / 学号 / 用户名 / 班级 / 手机号 / 状态"
+                    autocomplete="off"
+                  >
+                </label>
+                <span class="toolbar-count">共 {{ padCount(filteredStudents.length) }} 人</span>
+              </div>
+
               <div class="table-wrap">
                 <table v-if="accountTab === 'teacher'" class="data-table">
                   <thead>
@@ -247,7 +294,7 @@
                           {{ row.status === 1 ? '正常' : '已禁用' }}
                         </span>
                       </td>
-                      <td class="cell-muted">{{ formatTime(row.create_time) }}</td>
+                      <td class="cell-muted">{{ formatDateTime(row.create_time) }}</td>
                       <td>
                         <div class="row-actions">
                           <button type="button" class="btn btn-sm btn-soft-primary" @click="openAssignModal('teacher', row.teacher_id, row.name, row.class_id)">
@@ -290,7 +337,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="row in students" :key="row.user_id">
+                    <tr v-for="row in pagedStudents" :key="row.user_id">
                       <td class="cell-strong">{{ row.name }}</td>
                       <td><span class="mono">{{ row.student_no }}</span></td>
                       <td><span class="mono">{{ row.username }}</span></td>
@@ -301,7 +348,7 @@
                           {{ row.status === 1 ? '正常' : '已禁用' }}
                         </span>
                       </td>
-                      <td class="cell-muted">{{ formatTime(row.create_time) }}</td>
+                      <td class="cell-muted">{{ formatDateTime(row.create_time) }}</td>
                       <td>
                         <div class="row-actions">
                           <button type="button" class="btn btn-sm btn-soft-primary" @click="openAssignModal('student', row.student_id, row.name, row.class_id)">
@@ -324,11 +371,21 @@
                         </div>
                       </td>
                     </tr>
-                    <tr v-if="students.length === 0">
-                      <td colspan="8" class="empty-cell">暂无学生账户，请先在「新建学生」中创建</td>
+                    <tr v-if="filteredStudents.length === 0">
+                      <td colspan="8" class="empty-cell">
+                        {{ students.length === 0 ? '暂无学生账户，请先在「新建学生」中创建' : '没有学号包含该关键字的账户' }}
+                      </td>
                     </tr>
                   </tbody>
                 </table>
+              </div>
+
+              <div v-if="accountTab === 'student' && filteredStudents.length > 0" class="table-pager">
+                <span class="pager-info">第 {{ studentPage }} / {{ studentTotalPages }} 页 · 每页 {{ studentPageSize }} 条 · 共 {{ filteredStudents.length }} 条</span>
+                <div class="pager-actions">
+                  <button type="button" class="btn btn-sm btn-soft-primary" :disabled="studentPage <= 1" @click="studentPage--">上一页</button>
+                  <button type="button" class="btn btn-sm btn-soft-primary" :disabled="studentPage >= studentTotalPages" @click="studentPage++">下一页</button>
+                </div>
               </div>
             </div>
           </section>
@@ -410,12 +467,7 @@
                 </div>
                 <div class="form-field">
                   <label for="s-class">所属班级</label>
-                  <select id="s-class" v-model="studentForm.class_id" class="form-input form-select">
-                    <option value="">暂不分配班级</option>
-                    <option v-for="item in classes" :key="item.id" :value="item.id">
-                      {{ item.name }}{{ item.grade ? '（' + item.grade + '）' : '' }}
-                    </option>
-                  </select>
+                  <CustomSelect v-model="studentForm.class_id" :options="studentClassOptions" placeholder="暂不分配班级" />
                 </div>
                 <div class="form-field">
                   <label for="s-phone">手机号</label>
@@ -437,7 +489,7 @@
             <div class="card form-card">
               <div class="form-header">
                 <h2>创建课程</h2>
-                <p>为指定教师和班级安排一次课程，上课日期与时间段用于学生端课表展示。</p>
+                <p>为指定教师和班级安排课程，可一次创建多天课程；上课日期与时间段用于学生端课表展示。</p>
               </div>
 
               <div v-if="courseAlert.show" class="alert" :class="courseAlert.type" role="alert">
@@ -452,30 +504,76 @@
                 </div>
                 <div class="form-field">
                   <label for="c-teacher">授课教师 <span class="required">*</span></label>
-                  <select id="c-teacher" v-model="courseForm.teacher_id" class="form-input form-select">
-                    <option value="" disabled>请选择教师</option>
-                    <option v-for="item in teachers" :key="item.teacher_id" :value="item.teacher_id">
-                      {{ item.name }}{{ item.department ? '（' + item.department + '）' : '' }}
-                    </option>
-                  </select>
+                  <CustomSelect v-model="courseForm.teacher_id" :options="teacherOptions" placeholder="请选择教师" />
                 </div>
                 <div class="form-field">
                   <label for="c-class">上课班级 <span class="required">*</span></label>
-                  <select id="c-class" v-model="courseForm.class_id" class="form-input form-select">
-                    <option value="" disabled>请选择班级</option>
-                    <option v-for="item in classes" :key="item.id" :value="item.id">
-                      {{ item.name }}{{ item.grade ? '（' + item.grade + '）' : '' }}
-                    </option>
-                  </select>
+                  <CustomSelect v-model="courseForm.class_id" :options="classOptions" placeholder="请选择班级" />
                 </div>
                 <div class="form-field">
                   <label for="c-date">上课日期</label>
-                  <input id="c-date" v-model="courseForm.course_date" class="form-input" type="date">
+                  <input
+                    id="c-date"
+                    ref="courseDateInput"
+                    v-model="courseForm.course_date"
+                    class="form-input date-input"
+                    type="date"
+                    @change="syncCourseEndDate"
+                    @click="openDatePicker(courseDateInput)"
+                  >
                 </div>
                 <div class="form-field">
-                  <label for="c-time">上课时间段</label>
-                  <input id="c-time" v-model="courseForm.time" class="form-input" type="text" placeholder="请输入，格式为 08:00-09:40">
-                  <p class="field-hint">请按 <span class="mono">HH:mm-HH:mm</span> 格式填写，例如 <span class="mono">08:00-09:40</span></p>
+                  <label for="c-end-date">结束日期（多天重复）</label>
+                  <input
+                    id="c-end-date"
+                    ref="courseEndDateInput"
+                    v-model="courseForm.course_end_date"
+                    class="form-input date-input"
+                    type="date"
+                    @click="openDatePicker(courseEndDateInput)"
+                  >
+                </div>
+                <div class="form-field">
+                  <label>上课开始时间</label>
+                  <div class="time-select">
+                    <template v-for="item in startTimeUnits" :key="item.key">
+                      <div class="time-cell">
+                        <input
+                          :value="courseForm[item.key]"
+                          class="time-value"
+                          :class="{ 'is-empty': !courseForm[item.key], 'is-error': !!timeErrors[item.key] }"
+                          type="text"
+                          inputmode="numeric"
+                          maxlength="2"
+                          placeholder="--"
+                          @input="onTimeInput(item.key, $event)"
+                          @blur="onTimeBlur(item.key)"
+                        >
+                      </div>
+                      <span class="time-sep">{{ item.unit }}</span>
+                    </template>
+                  </div>
+                </div>
+                <div class="form-field">
+                  <label>上课结束时间</label>
+                  <div class="time-select">
+                    <template v-for="item in endTimeUnits" :key="item.key">
+                      <div class="time-cell">
+                        <input
+                          :value="courseForm[item.key]"
+                          class="time-value"
+                          :class="{ 'is-empty': !courseForm[item.key], 'is-error': !!timeErrors[item.key] }"
+                          type="text"
+                          inputmode="numeric"
+                          maxlength="2"
+                          placeholder="--"
+                          @input="onTimeInput(item.key, $event)"
+                          @blur="onTimeBlur(item.key)"
+                        >
+                      </div>
+                      <span class="time-sep">{{ item.unit }}</span>
+                    </template>
+                  </div>
                 </div>
               </div>
 
@@ -492,6 +590,22 @@
                 <h2>已排课程</h2>
                 <button type="button" class="btn btn-secondary btn-sm" @click="fetchCourses">刷新</button>
               </div>
+              <div class="table-toolbar">
+                <label class="search-field">
+                  <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7" />
+                    <line x1="16.5" y1="16.5" x2="21" y2="21" />
+                  </svg>
+                  <input
+                    v-model="courseKeyword"
+                    class="search-input"
+                    type="text"
+                    placeholder="搜索课程 / 教师 / 班级 / 日期 / 时间段"
+                    autocomplete="off"
+                  >
+                </label>
+                <span class="toolbar-count">共 {{ padCount(filteredCourses.length) }} 门</span>
+              </div>
               <div class="table-wrap">
                 <table class="data-table">
                   <thead>
@@ -505,7 +619,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="item in courses" :key="item.id">
+                    <tr v-for="item in pagedCourses" :key="item.id">
                       <td class="cell-strong">{{ item.name }}</td>
                       <td>{{ item.teacher_name }}</td>
                       <td>{{ item.class_name }}</td>
@@ -517,11 +631,20 @@
                         </button>
                       </td>
                     </tr>
-                    <tr v-if="courses.length === 0">
-                      <td colspan="6" class="empty-cell">暂无课程安排</td>
+                    <tr v-if="filteredCourses.length === 0">
+                      <td colspan="6" class="empty-cell">
+                        {{ courses.length === 0 ? '暂无课程安排' : '没有包含该关键字的课程' }}
+                      </td>
                     </tr>
                   </tbody>
                 </table>
+              </div>
+              <div v-if="filteredCourses.length > 0" class="table-pager">
+                <span class="pager-info">第 {{ coursePage }} / {{ courseTotalPages }} 页 · 每页 {{ coursePageSize }} 条 · 共 {{ filteredCourses.length }} 条</span>
+                <div class="pager-actions">
+                  <button type="button" class="btn btn-sm btn-soft-primary" :disabled="coursePage <= 1" @click="coursePage--">上一页</button>
+                  <button type="button" class="btn btn-sm btn-soft-primary" :disabled="coursePage >= courseTotalPages" @click="coursePage++">下一页</button>
+                </div>
               </div>
             </div>
           </section>
@@ -550,12 +673,7 @@
                 </div>
                 <div class="form-field span-2">
                   <label for="cl-teacher">班主任（可选）</label>
-                  <select id="cl-teacher" v-model="classForm.teacher_id" class="form-input form-select">
-                    <option value="">暂不指定班主任</option>
-                    <option v-for="item in teachers" :key="item.teacher_id" :value="item.teacher_id">
-                      {{ item.name }}{{ item.department ? '（' + item.department + '）' : '' }}
-                    </option>
-                  </select>
+                  <CustomSelect v-model="classForm.teacher_id" :options="classTeacherOptions" placeholder="暂不指定班主任" />
                 </div>
               </div>
 
@@ -597,6 +715,412 @@
                     </tr>
                     <tr v-if="classes.length === 0">
                       <td colspan="5" class="empty-cell">暂无班级，请先创建班级</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- ================= 更新日志 ================= -->
+          <section v-show="activeTab === 'updates'">
+            <div class="card panel-card">
+              <div class="panel-header">
+                <h2>更新日志</h2>
+                <button type="button" class="btn btn-primary btn-sm" @click="openUpdateModal()">新增更新</button>
+              </div>
+
+              <div class="table-toolbar">
+                <label class="search-field">
+                  <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7" />
+                    <line x1="16.5" y1="16.5" x2="21" y2="21" />
+                  </svg>
+                  <input
+                    v-model="updateKeyword"
+                    class="search-input"
+                    type="text"
+                    placeholder="搜索类型 / 更新内容"
+                    autocomplete="off"
+                  >
+                </label>
+                <input
+                  ref="updateFilterDateInput"
+                  v-model="updateDate"
+                  class="form-input date-input update-date-filter"
+                  type="date"
+                  aria-label="按日期查找"
+                  @click="openDatePicker(updateFilterDateInput)"
+                >
+                <span class="toolbar-count">共 {{ padCount(filteredUpdates.length) }} 条</span>
+              </div>
+
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th class="col-update-tag">类型</th>
+                      <th>更新内容</th>
+                      <th class="col-update-date">日期</th>
+                      <th class="col-actions">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="row in pagedUpdates" :key="row.update_id">
+                      <td>
+                        <span class="badge" :class="updateTagClass(row.tag)">{{ row.tag }}</span>
+                      </td>
+                      <td class="cell-strong">{{ row.content }}</td>
+                      <td class="cell-muted">{{ row.created_at || '-' }}</td>
+                      <td>
+                        <div class="row-actions">
+                          <button type="button" class="btn btn-sm btn-soft-primary" @click="openUpdateModal(row)">
+                            编辑
+                          </button>
+                          <button type="button" class="btn btn-sm btn-soft-danger" @click="deleteUpdate(row)">
+                            删除
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr v-if="filteredUpdates.length === 0">
+                      <td colspan="4" class="empty-cell">
+                        {{ updateEmptyText }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div v-if="filteredUpdates.length > 0" class="table-pager">
+                <span class="pager-info">第 {{ updatePage }} / {{ updateTotalPages }} 页 · 每页 {{ updatePageSize }} 条 · 共 {{ filteredUpdates.length }} 条</span>
+                <div class="pager-actions">
+                  <button type="button" class="btn btn-sm btn-soft-primary" :disabled="updatePage <= 1" @click="updatePage--">上一页</button>
+                  <button type="button" class="btn btn-sm btn-soft-primary" :disabled="updatePage >= updateTotalPages" @click="updatePage++">下一页</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ================= 跨站同步 ================= -->
+          <section v-show="activeTab === 'sync'" class="sync-page">
+            <div class="stats-grid">
+              <div class="card stat-card">
+                <div class="stat-head">
+                  <span class="stat-label">待发送</span>
+                  <span class="stat-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M12 19V5M5 12l7-7 7 7" />
+                    </svg>
+                  </span>
+                </div>
+                <div class="stat-number">{{ syncStatus?.pending_outbox ?? 0 }}</div>
+                <div class="stat-caption">等待推送或重试的事件</div>
+              </div>
+
+              <div class="card stat-card">
+                <div class="stat-head">
+                  <span class="stat-label">发送失败</span>
+                  <span class="stat-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M12 5v14M5 12l7 7 7-7" />
+                    </svg>
+                  </span>
+                </div>
+                <div class="stat-number">{{ syncOutboxFailed }}</div>
+                <div class="stat-caption">超过重试上限，需人工重试</div>
+              </div>
+
+              <div class="card stat-card">
+                <div class="stat-head">
+                  <span class="stat-label">同步记录</span>
+                  <span class="stat-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M4 7h16M4 12h16M4 17h10" />
+                    </svg>
+                  </span>
+                </div>
+                <div class="stat-number">{{ syncStatus?.cross_record?.total ?? 0 }}</div>
+                <div class="stat-caption">异地签到入库总量 · 作废 {{ syncStatus?.cross_record?.voided ?? 0 }}</div>
+              </div>
+
+              <div class="card stat-card">
+                <div class="stat-head">
+                  <span class="stat-label">待处理冲突</span>
+                  <span class="stat-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M12 9v4M12 17h.01" />
+                      <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+                    </svg>
+                  </span>
+                </div>
+                <div class="stat-number">{{ syncStatus?.pending_conflicts ?? 0 }}</div>
+                <div class="stat-caption">同一门课多站签到，已按最早时间裁决</div>
+              </div>
+            </div>
+
+            <div class="sync-toolbar">
+              <div class="sync-site">
+                <span class="sync-site-dot" :class="{ 'sync-site-dot-off': !syncStatus }" aria-hidden="true"></span>
+                <span class="sync-site-code mono">{{ syncStatus?.site_code || '-' }}</span>
+                <span class="sync-site-meta">{{ syncStatus?.site_name || '未配置站点名称' }} · 契约 v{{ syncStatus?.schema_version || '-' }}</span>
+              </div>
+              <div class="sync-toolbar-actions">
+                <button type="button" class="btn btn-primary btn-sm" :disabled="syncBusy || syncCooldown" @click="triggerSync('sync')">立即同步</button>
+                <button type="button" class="btn btn-soft-primary btn-sm" :disabled="syncBusy || syncCooldown" @click="triggerSync('reconcile')">执行对账</button>
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  :class="autoConnecting ? 'btn-soft-danger' : 'btn-soft-primary'"
+                  :disabled="(!autoConnecting && syncBusy) || syncCooldown"
+                  @click="toggleConnect"
+                >{{ autoConnecting ? `连接中 ${autoConnectElapsed}s（点击停止）` : "连接对端" }}</button>
+                <button type="button" class="btn btn-secondary btn-sm" :disabled="syncLoading || syncCooldown" @click="refreshSync">刷新</button>
+              </div>
+            </div>
+
+            <div v-if="lastSyncError" class="sync-alert sync-alert-danger">
+              <span class="sync-alert-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 9v4M12 17h.01" />
+                  <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+                </svg>
+              </span>
+              <div class="sync-alert-body">
+                <p class="sync-alert-title">同步状态加载失败</p>
+                <p class="sync-alert-text">{{ lastSyncError }}</p>
+              </div>
+            </div>
+
+            <div v-if="offlinePeers.length" class="sync-alert sync-alert-warn">
+              <span class="sync-alert-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 9v4M12 17h.01" />
+                  <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+                </svg>
+              </span>
+              <div class="sync-alert-body">
+                <p class="sync-alert-title">部分对端站点当前不可达</p>
+                <ul class="sync-alert-list">
+                  <li v-for="peer in offlinePeers" :key="peer.code">
+                    <span class="sync-peer-tag">{{ peer.name }}</span>
+                    <span class="sync-alert-text">{{ peer.error || '连接失败，原因未知' }}</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- 对端站点 -->
+            <div class="card panel-card">
+              <div class="panel-header">
+                <h2>对端站点</h2>
+                <span class="toolbar-count">共 {{ syncPeers.length }} 个</span>
+              </div>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>编码</th>
+                      <th>名称</th>
+                      <th>地址</th>
+                      <th>连通性</th>
+                      <th>对端时间</th>
+                      <th>同步进度</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="peer in syncPeers" :key="peer.code">
+                      <td class="mono">{{ peer.code }}</td>
+                      <td class="cell-strong">{{ peer.site_name || peer.name }}</td>
+                      <td class="cell-muted">{{ peer.base_url }}</td>
+                      <td>
+                        <span class="badge" :class="peer.online ? 'badge-ok' : 'badge-off'">
+                          {{ peer.online ? '在线' : '离线' }}
+                        </span>
+                      </td>
+                      <td class="mono">{{ peer.server_time || '-' }}</td>
+                      <td>
+                        <span
+                          class="sync-progress"
+                          :class="{ 'sync-progress-idle': !syncStatus?.cursors?.[peer.code] }"
+                        >{{ cursorText(peer.code) }}</span>
+                      </td>
+                    </tr>
+                    <tr v-if="!syncPeers.length">
+                      <td colspan="6" class="empty-cell">未配置对端站点，请检查 main/BE/sync/config.py</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 发送队列 -->
+            <div class="card panel-card">
+              <div class="panel-header">
+                <h2>发送队列</h2>
+                <span class="toolbar-count">最近 {{ outboxItems.length }} 条</span>
+              </div>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>目标站点</th>
+                      <th>事件</th>
+                      <th>状态</th>
+                      <th>重试</th>
+                      <th>最近错误</th>
+                      <th class="col-actions">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="row in outboxItems" :key="row.id">
+                      <td class="mono">{{ row.id }}</td>
+                      <td class="cell-strong">{{ row.target_peer_name || row.target_peer }}</td>
+                      <td class="cell-muted">{{ eventTypeText(row.event_type) }}</td>
+                      <td>
+                        <span class="badge" :class="outboxBadgeClass(row.status)">{{ outboxStatusText(row.status) }}</span>
+                      </td>
+                      <td class="mono">{{ row.retry_count }}</td>
+                      <td class="cell-muted sync-err" :title="row.last_error || ''">{{ row.last_error || '-' }}</td>
+                      <td>
+                        <div class="row-actions">
+                          <button
+                            v-if="Number(row.status) === 2"
+                            type="button"
+                            class="btn btn-sm btn-soft-primary"
+                            :disabled="syncBusy"
+                            @click="retryOutbox(row.id)"
+                          >重试</button>
+                          <span v-else class="cell-muted">-</span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr v-if="!outboxItems.length">
+                      <td colspan="7" class="empty-cell">队列为空，暂无待推送事件</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 跨站冲突 -->
+            <div class="card panel-card">
+              <div class="panel-header">
+                <h2>跨站冲突</h2>
+                <span class="toolbar-count">共 {{ conflictTotal }} 条 · 待处理 {{ conflictPending }}</span>
+              </div>
+
+              <div class="table-toolbar">
+                <!-- 「全部」按钮只在「待处理」视图有意义；隐藏时用 visibility 占位，
+                     保证切换到其他状态时这一行不会重新排版 -->
+                <div class="toolbar-left" :class="{ 'is-hidden': conflictState !== 0 }">
+                  <button
+                    type="button"
+                    class="btn btn-soft-primary btn-sm"
+                    :disabled="syncBusy || !conflictItems.length"
+                    @click="batchHandleConflicts('resolve', true)"
+                  >全部已裁决</button>
+                  <button
+                    type="button"
+                    class="btn btn-soft-danger btn-sm"
+                    :disabled="syncBusy || !conflictItems.length"
+                    @click="batchHandleConflicts('ignore', true)"
+                  >全部忽略</button>
+                </div>
+                <label class="search-field">
+                  <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7" />
+                    <line x1="16.5" y1="16.5" x2="21" y2="21" />
+                  </svg>
+                  <input
+                    v-model="conflictKeyword"
+                    class="search-input"
+                    type="text"
+                    placeholder="搜索学号 / 班级键 / 日期"
+                    autocomplete="off"
+                    @keyup.enter="loadSyncConflicts"
+                  >
+                </label>
+                <div class="conflict-state-select">
+                  <CustomSelect
+                    v-model="conflictState"
+                    :options="conflictStateOptions"
+                    placeholder="全部状态"
+                    size="sm"
+                    @change="loadSyncConflicts"
+                  />
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" :disabled="syncLoading" @click="loadSyncConflicts">查询</button>
+                <span class="toolbar-count">已选 {{ conflictSelected.length }} 条</span>
+                <div class="row-actions">
+                  <button
+                    type="button"
+                    class="btn btn-soft-primary btn-sm"
+                    :disabled="syncBusy || !conflictSelected.length"
+                    @click="batchHandleConflicts('resolve')"
+                  >批量已裁决</button>
+                  <button
+                    type="button"
+                    class="btn btn-soft-danger btn-sm"
+                    :disabled="syncBusy || !conflictSelected.length"
+                    @click="batchHandleConflicts('ignore')"
+                  >批量忽略</button>
+                </div>
+              </div>
+
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th class="col-check">
+                        <input
+                          type="checkbox"
+                          :checked="conflictAllSelected"
+                          :disabled="!conflictItems.length"
+                          @change="toggleConflictAll"
+                        >
+                      </th>
+                      <th>对齐键</th>
+                      <th>获胜方</th>
+                      <th>落败记录</th>
+                      <th>状态</th>
+                      <th>发生时间</th>
+                      <th class="col-actions">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="row in conflictItems" :key="row.id">
+                      <td class="col-check">
+                        <input
+                          type="checkbox"
+                          :checked="conflictSelected.includes(row.id)"
+                          @change="toggleConflictRow(row.id)"
+                        >
+                      </td>
+                      <td class="cell-muted mono">{{ row.align_key }}</td>
+                      <td>
+                        <span class="badge badge-new">{{ row.winner_site_name || row.winner_site }}</span>
+                      </td>
+                      <td class="cell-muted">{{ conflictLoserText(row) }}</td>
+                      <td>
+                        <span class="badge" :class="Number(row.state) === 0 ? 'badge-opt' : 'badge-ok'">
+                          {{ conflictStateText(row.state) }}
+                        </span>
+                      </td>
+                      <td class="cell-muted">{{ row.created_at || '-' }}</td>
+                      <td>
+                        <div class="row-actions">
+                          <template v-if="Number(row.state) === 0">
+                            <button type="button" class="btn btn-sm btn-soft-primary" :disabled="syncBusy" @click="handleConflict(row.id, 'resolve')">已裁决</button>
+                            <button type="button" class="btn btn-sm btn-soft-danger" :disabled="syncBusy" @click="handleConflict(row.id, 'ignore')">忽略</button>
+                          </template>
+                          <span v-else class="cell-muted">{{ row.handled_at || '已处理' }}</span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr v-if="!conflictItems.length">
+                      <td colspan="7" class="empty-cell">暂无冲突</td>
                     </tr>
                   </tbody>
                 </table>
@@ -646,18 +1170,56 @@
         </p>
         <div class="form-field">
           <label for="assign-class">所属班级</label>
-          <select id="assign-class" v-model="assignModal.class_id" class="form-input form-select">
-            <option value="">未分配</option>
-            <option v-for="item in classes" :key="item.id" :value="item.id">
-              {{ item.name }}{{ item.grade ? '（' + item.grade + '）' : '' }}
-            </option>
-          </select>
+          <CustomSelect v-model="assignModal.class_id" :options="assignClassOptions" placeholder="未分配" />
           <p v-if="assignModal.error" class="field-error">{{ assignModal.error }}</p>
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-secondary" @click="closeAssignModal">取消</button>
           <button type="button" class="btn btn-primary" :disabled="assignModal.submitting" @click="confirmAssignClass">
             {{ assignModal.submitting ? '保存中…' : '确认分配' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 更新日志编辑弹窗 ================= -->
+    <div v-if="updateModal.show" class="modal-mask" @click.self="closeUpdateModal">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="update-title">
+        <h3 id="update-title">{{ updateModal.update_id ? '编辑更新日志' : '新增更新日志' }}</h3>
+        <p class="modal-desc">
+          类型标记本次改动属于「新增 / 优化 / 修复」，日期决定该日志归入哪一天的更新记录。
+        </p>
+        <div class="form-field">
+          <label>类型 <span class="required">*</span></label>
+          <CustomSelect v-model="updateModal.tag" :options="updateTagOptions" placeholder="请选择类型" />
+        </div>
+        <div class="form-field">
+          <label for="update-date">日期 <span class="required">*</span></label>
+          <input
+            id="update-date"
+            ref="updateDateInput"
+            v-model="updateModal.date"
+            class="form-input date-input"
+            type="date"
+            @click="openDatePicker(updateDateInput)"
+          >
+        </div>
+        <div class="form-field">
+          <label for="update-content">更新内容 <span class="required">*</span></label>
+          <textarea
+            id="update-content"
+            v-model="updateModal.content"
+            class="form-textarea"
+            rows="4"
+            maxlength="500"
+            placeholder="请输入本次更新的内容（不超过 500 字）"
+          ></textarea>
+        </div>
+        <p v-if="updateModal.error" class="field-error">{{ updateModal.error }}</p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" @click="closeUpdateModal">取消</button>
+          <button type="button" class="btn btn-primary" :disabled="updateModal.submitting" @click="submitUpdate">
+            {{ updateModal.submitting ? '保存中…' : '保存' }}
           </button>
         </div>
       </div>
@@ -684,9 +1246,12 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted, nextTick, type Ref } from "vue"
+import { reactive, ref, computed, watch, onMounted, nextTick, type Ref } from "vue"
 import { useRouter } from "vue-router"
 import request from "../api/request"
+import CustomSelect from "../components/CustomSelect.vue"
+import { errorMessage, isAuthError } from "../utils/error"
+import { formatDateTime } from "../utils/format"
 
 // =====================================================
 // 类型定义
@@ -736,13 +1301,97 @@ interface CourseRow {
   class_name: string
 }
 
+interface UpdateRow {
+  update_id: number
+  tag: string
+  content: string
+  created_at?: string | null
+}
+
 interface ApiResult<T> {
   code: number
   message?: string
   data?: T
 }
 
-type TabKey = "accounts" | "createTeacher" | "createStudent" | "createCourse" | "classManagement"
+// -----------------------------------------------------
+// 跨站同步：后端 /api/admin/sync/* 返回结构
+// -----------------------------------------------------
+
+interface SyncPeerStatus {
+  code: string
+  name: string
+  base_url: string
+  online: boolean
+  site_name: string | null
+  server_time: string | null
+  error: string | null
+}
+
+interface SyncCursorRow {
+  peer_code: string
+  last_seq: number
+  last_pull_at: string | null
+  last_success_at: string | null
+  fail_count: number
+  last_error: string | null
+}
+
+interface SyncStatus {
+  site_code: string
+  site_name: string
+  schema_version: string
+  peers: SyncPeerStatus[]
+  cursors: Record<string, SyncCursorRow>
+  outbox: Record<string, number>
+  pending_outbox: number
+  pending_conflicts: number
+  cross_record: { total: number; voided: number }
+}
+
+interface SyncOutboxRow {
+  id: number
+  target_peer: string
+  target_peer_name?: string
+  event_id: string
+  event_type: string
+  status: number
+  retry_count: number
+  next_retry_at: string | null
+  last_error: string | null
+  created_at: string | null
+  sent_at: string | null
+}
+
+interface SyncConflictLoserEntry {
+  site?: string
+  site_name?: string
+  record_id?: string
+  sign_time?: string
+  attendance_status?: number | null
+  status_text?: string | null
+}
+
+// 后端 loser_json 存的是 { winner, losers[] } 嵌套结构
+interface SyncConflictLoser {
+  winner?: SyncConflictLoserEntry
+  losers?: SyncConflictLoserEntry[]
+}
+
+interface SyncConflictRow {
+  id: string
+  align_key: string
+  winner_record_id: string | null
+  winner_site: string
+  winner_site_name?: string
+  loser_json: SyncConflictLoser | null
+  state: number
+  created_at: string | null
+  handled_by: string | null
+  handled_at: string | null
+}
+
+type TabKey = "accounts" | "createTeacher" | "createStudent" | "createCourse" | "classManagement" | "updates" | "sync"
 type AlertType = "success" | "error"
 
 interface FormAlert {
@@ -759,6 +1408,8 @@ const router = useRouter()
 
 const activeTab = ref<TabKey>("accounts")
 const accountTab = ref<"teacher" | "student">("teacher")
+// 学生学号筛选关键字（支持模糊匹配）
+const studentNoFilter = ref("")
 
 const pageLoading = ref(true)
 const pageError = ref("")
@@ -768,15 +1419,205 @@ const adminInitial = ref("管")
 
 const teachers = ref<TeacherRow[]>([])
 const students = ref<StudentRow[]>([])
+// 学生模糊筛选：姓名 / 学号 / 用户名 / 班级 / 手机号 / 状态 任一包含关键字即显示
+const filteredStudents = computed(() => {
+  const keyword = studentNoFilter.value.trim().toLowerCase()
+  if (!keyword) return students.value
+  return students.value.filter((item) => {
+    const statusText = item.status === 1 ? "正常 已启用" : "已禁用 禁用"
+    return [item.name, item.student_no, item.username, item.class_name, item.phone, statusText].some(
+      (field) => (field || "").toLowerCase().includes(keyword)
+    )
+  })
+})
+// 前端分页：数据量大时只渲染当前页，避免一次性渲染全部行导致卡顿
+const studentPageSize = 20
+const studentPage = ref(1)
+const studentTotalPages = computed(() =>
+  Math.max(1, Math.ceil(filteredStudents.value.length / studentPageSize))
+)
+const pagedStudents = computed(() => {
+  const start = (studentPage.value - 1) * studentPageSize
+  return filteredStudents.value.slice(start, start + studentPageSize)
+})
+// 筛选条件变化时回到第一页；数据减少导致页码越界时自动回退
+watch(studentNoFilter, () => {
+  studentPage.value = 1
+})
+watch(studentTotalPages, (total) => {
+  if (studentPage.value > total) studentPage.value = total
+})
+// 人数显示：不足两位时补前导 0（如 5 → 05）
+function padCount(value: number): string {
+  return String(value).padStart(2, "0")
+}
 const classes = ref<ClassRow[]>([])
 const courses = ref<CourseRow[]>([])
+// 已排课程模糊筛选：课程名称 / 授课教师 / 上课班级 / 上课日期 / 时间段 任一包含关键字即显示
+const courseKeyword = ref("")
+const filteredCourses = computed(() => {
+  const keyword = courseKeyword.value.trim().toLowerCase()
+  if (!keyword) return courses.value
+  return courses.value.filter((item) =>
+    [item.name, item.teacher_name, item.class_name, item.course_date, item.time].some((field) =>
+      (field || "").toLowerCase().includes(keyword)
+    )
+  )
+})
+// 已排课程前端分页
+const coursePageSize = 20
+const coursePage = ref(1)
+const courseTotalPages = computed(() =>
+  Math.max(1, Math.ceil(filteredCourses.value.length / coursePageSize))
+)
+const pagedCourses = computed(() => {
+  const start = (coursePage.value - 1) * coursePageSize
+  return filteredCourses.value.slice(start, start + coursePageSize)
+})
+watch(courseKeyword, () => {
+  coursePage.value = 1
+})
+watch(courseTotalPages, (total) => {
+  if (coursePage.value > total) coursePage.value = total
+})
+
+// 更新日志：类型 / 内容 模糊筛选
+const updates = ref<UpdateRow[]>([])
+const updateKeyword = ref("")
+// 按天查找：默认今天，只看所选日期当天的更新
+const updateDate = ref(todayText())
+// 更新日志：先按日期过滤，再按关键字（类型 / 内容 / 日期）模糊过滤
+const filteredUpdates = computed(() => {
+  const keyword = updateKeyword.value.trim().toLowerCase()
+  return updates.value.filter((item) => {
+    if (updateDate.value && (item.created_at || "").slice(0, 10) !== updateDate.value) {
+      return false
+    }
+    if (!keyword) return true
+    return [item.tag, item.content, item.created_at].some((field) =>
+      (field || "").toLowerCase().includes(keyword)
+    )
+  })
+})
+// 空态文案：区分「无数据」「今天暂无更新」「该日期暂无更新」「无关键字结果」
+const updateEmptyText = computed(() => {
+  if (updates.value.length === 0) {
+    return "暂无更新日志，点击右上角「新增更新」添加"
+  }
+  if (updateKeyword.value.trim()) {
+    return "没有包含该关键字的更新日志"
+  }
+  if (updateDate.value === todayText()) {
+    return "今天暂无更新"
+  }
+  return updateDate.value ? `${updateDate.value} 暂无更新` : "暂无更新日志"
+})
+// 更新日志前端分页
+const updatePageSize = 20
+const updatePage = ref(1)
+const updateTotalPages = computed(() =>
+  Math.max(1, Math.ceil(filteredUpdates.value.length / updatePageSize))
+)
+const pagedUpdates = computed(() => {
+  const start = (updatePage.value - 1) * updatePageSize
+  return filteredUpdates.value.slice(start, start + updatePageSize)
+})
+watch(updateKeyword, () => {
+  updatePage.value = 1
+})
+watch(updateDate, () => {
+  updatePage.value = 1
+})
+watch(updateTotalPages, (total) => {
+  if (updatePage.value > total) updatePage.value = total
+})
+const updateTagOptions = [
+  { label: "新增", value: "新增" },
+  { label: "优化", value: "优化" },
+  { label: "修复", value: "修复" }
+]
+
+// =====================================================
+// 跨站同步（管理页）
+// =====================================================
+
+const syncStatus = ref<SyncStatus | null>(null)
+const outboxItems = ref<SyncOutboxRow[]>([])
+const conflictItems = ref<SyncConflictRow[]>([])
+const conflictTotal = ref(0)
+const conflictPending = ref(0)
+// 状态筛选：0 待处理 / 1 已裁决 / 2 已忽略 / -1 全部
+const conflictStateOptions = [
+  { label: "待处理", value: 0 },
+  { label: "已裁决", value: 1 },
+  { label: "已忽略", value: 2 },
+  { label: "全部状态", value: -1 }
+]
+const conflictState = ref<number | string>(0)
+const conflictKeyword = ref("")
+const conflictSelected = ref<string[]>([])
+const conflictAllSelected = computed(
+  () => conflictItems.value.length > 0 && conflictSelected.value.length === conflictItems.value.length
+)
+const syncLoading = ref(false)
+const syncBusy = ref(false)
+const lastSyncError = ref("")
+
+// 工具栏防连点：四个按钮（立即同步 / 执行对账 / 连接对端 / 刷新）任一次点击后
+// 统一冷却 3s，避免用户反复点击重复触发请求。
+const SYNC_COOLDOWN_MS = 3_000
+const syncCooldown = ref(false)
+let syncCooldownTimer: ReturnType<typeof setTimeout> | undefined
+
+function startSyncCooldown(): void {
+  syncCooldown.value = true
+  if (syncCooldownTimer !== undefined) window.clearTimeout(syncCooldownTimer)
+  syncCooldownTimer = window.setTimeout(() => {
+    syncCooldown.value = false
+    syncCooldownTimer = undefined
+  }, SYNC_COOLDOWN_MS)
+}
+
+// 「连接对端」：手动点击或打开同步页时进入有界自动重试 —— 每 5s 连一次，
+// 累计满 30s 仍未全部连通就自动取消，需用户重新点击。
+const autoConnecting = ref(false)
+const autoConnectElapsed = ref(0)
+const AUTO_CONNECT_INTERVAL = 5_000
+const AUTO_CONNECT_WINDOW = 30_000
+let autoConnectTimer: ReturnType<typeof setTimeout> | undefined
+let autoConnectTick: ReturnType<typeof setInterval> | undefined
+let autoConnectStartedAt = 0
+
+const syncPeers = computed(() => syncStatus.value?.peers || [])
+// 发送失败数：outbox 统计按状态号分组，2 = OUTBOX_FAILED
+const syncOutboxFailed = computed(() => Number(syncStatus.value?.outbox?.["2"] ?? 0))
+// 离线对端列表：逐条展示离线原因，便于排查 base_url / token 配置
+const offlinePeers = computed(() => syncPeers.value.filter((peer) => !peer.online))
+
+const classOptions = computed(() =>
+  classes.value.map((item) => ({
+    label: item.grade ? `${item.name}（${item.grade}）` : item.name,
+    value: item.id
+  }))
+)
+const teacherOptions = computed(() =>
+  teachers.value.map((item) => ({
+    label: item.department ? `${item.name}（${item.department}）` : item.name,
+    value: item.teacher_id
+  }))
+)
+const studentClassOptions = computed(() => [{ label: "暂不分配班级", value: "" }, ...classOptions.value])
+const classTeacherOptions = computed(() => [{ label: "暂不指定班主任", value: "" }, ...teacherOptions.value])
+const assignClassOptions = computed(() => [{ label: "未分配", value: "" }, ...classOptions.value])
 
 const tabMeta: Record<TabKey, { title: string; desc: string }> = {
   accounts: { title: "账户管理", desc: "管理教师与学生账户，可重置密码、分配班级、启用或禁用账号" },
   createTeacher: { title: "新建教师", desc: "创建教师登录账号并维护基本信息" },
   createStudent: { title: "新建学生", desc: "创建学生登录账号，学号全局唯一" },
   createCourse: { title: "新建课程", desc: "为教师与班级安排课程及上课时间" },
-  classManagement: { title: "班级管理", desc: "创建与删除班级，维护班级基础信息" }
+  classManagement: { title: "班级管理", desc: "创建与删除班级，维护班级基础信息" },
+  updates: { title: "更新日志", desc: "维护登录页展示的更新日志，支持按类型 / 内容模糊搜索" },
+  sync: { title: "跨站同步", desc: "查看同步状态与对端连通性，处理发送队列与跨站冲突" }
 }
 
 // =====================================================
@@ -805,8 +1646,49 @@ const courseForm = reactive({
   teacher_id: "",
   class_id: "",
   course_date: "",
-  time: ""
+  course_end_date: "",
+  start_hour: "",
+  start_minute: "",
+  end_hour: "",
+  end_minute: ""
 })
+
+type TimeFieldKey = "start_hour" | "start_minute" | "end_hour" | "end_minute"
+
+interface TimeUnitConfig {
+  key: TimeFieldKey
+  unit: string
+}
+
+const startTimeUnits: TimeUnitConfig[] = [
+  { key: "start_hour", unit: "时" },
+  { key: "start_minute", unit: "分" }
+]
+
+const endTimeUnits: TimeUnitConfig[] = [
+  { key: "end_hour", unit: "时" },
+  { key: "end_minute", unit: "分" }
+]
+
+const TIME_FIELD_KEYS: TimeFieldKey[] = ["start_hour", "start_minute", "end_hour", "end_minute"]
+
+// 各时间位的取值上限：小时 00-23，分 00-59
+const TIME_MAX: Record<TimeFieldKey, number> = {
+  start_hour: 23,
+  start_minute: 59,
+  end_hour: 23,
+  end_minute: 59
+}
+
+const timeErrors = reactive<Record<TimeFieldKey, string>>({
+  start_hour: "",
+  start_minute: "",
+  end_hour: "",
+  end_minute: ""
+})
+
+const courseDateInput = ref<HTMLInputElement>()
+const courseEndDateInput = ref<HTMLInputElement>()
 
 const teacherSubmitting = ref(false)
 const studentSubmitting = ref(false)
@@ -845,6 +1727,24 @@ const assignModal = reactive({
   class_id: "",
   submitting: false,
   error: ""
+})
+
+// =====================================================
+// 更新日志编辑弹窗
+// =====================================================
+
+const updateDateInput = ref<HTMLInputElement>()
+// 更新日志列表「按天查找」的日期输入框
+const updateFilterDateInput = ref<HTMLInputElement>()
+
+const updateModal = reactive({
+  show: false,
+  update_id: 0,
+  tag: "新增",
+  date: "",
+  content: "",
+  error: "",
+  submitting: false
 })
 
 // =====================================================
@@ -896,42 +1796,66 @@ function todayText(): string {
   return `${now.getFullYear()}-${month}-${day}`
 }
 
-function formatTime(value?: string | null): string {
-  if (!value) {
-    return "-"
-  }
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  const day = String(date.getDate()).padStart(2, "0")
-  const hour = String(date.getHours()).padStart(2, "0")
-  const minute = String(date.getMinutes()).padStart(2, "0")
-  return `${date.getFullYear()}-${month}-${day} ${hour}:${minute}`
-}
-
 function validPhone(phone: string): boolean {
   return phone === "" || /^1\d{10}$/.test(phone)
 }
 
-// 校验时间段格式 HH:mm-HH:mm（小时 00-23，分钟 00-59），且结束时间不早于开始时间
-function validTimeRange(value: string): boolean {
-  const m = /^([01]\d|2[0-3]):([0-5]\d)-([01]\d|2[0-3]):([0-5]\d)$/.exec(value.trim())
-  if (!m) return false
-  const startMin = parseInt(m[1], 10) * 60 + parseInt(m[2], 10)
-  const endMin = parseInt(m[3], 10) * 60 + parseInt(m[4], 10)
-  return endMin >= startMin
+// 拼接上课时间段：开始/结束时间均为 HH:mm:ss，结束须晚于开始；否则返回 null
+function combineTimeRange(start: string, end: string): string | null {
+  if (!start || !end || end <= start) return null
+  return `${start}-${end}`
 }
 
-function errorMessage(error: unknown, fallback: string): string {
-  const err = error as { response?: { data?: { message?: string } } }
-  return err?.response?.data?.message || fallback
+// 由时、分拼接为 HH:mm；任一未填返回 null
+function buildTimeString(hour: string, minute: string): string | null {
+  if (!hour || !minute) return null
+  return `${hour}:${minute}`
 }
 
-function isAuthError(error: unknown): boolean {
-  const status = (error as { response?: { status?: number } })?.response?.status
-  return status === 401 || status === 403
+// 仅保留两位数字并实时校验范围
+function onTimeInput(key: TimeFieldKey, event: Event): void {
+  const input = event.target as HTMLInputElement
+  const digits = input.value.replace(/\D/g, "").slice(0, 2)
+  courseForm[key] = digits
+  input.value = digits
+  checkTimeField(key)
+}
+
+// 失焦时把个位数补零（如 5 -> 05）并再次校验
+function onTimeBlur(key: TimeFieldKey): void {
+  if (/^\d$/.test(courseForm[key])) {
+    courseForm[key] = `0${courseForm[key]}`
+  }
+  checkTimeField(key)
+}
+
+// 校验单个时间位是否在合法范围内
+function checkTimeField(key: TimeFieldKey): void {
+  const value = courseForm[key]
+  if (value === "") {
+    timeErrors[key] = ""
+    return
+  }
+  timeErrors[key] = Number(value) <= TIME_MAX[key] ? "" : `范围 00-${TIME_MAX[key]}`
+}
+
+// 结束日期默认跟随上课日期（仅在结束日期为空或早于新上课日期时更新）
+function syncCourseEndDate(): void {
+  if (!courseForm.course_end_date || courseForm.course_end_date < courseForm.course_date) {
+    courseForm.course_end_date = courseForm.course_date
+  }
+}
+
+// 点击日期框任意位置唤起原生日期选择器
+function openDatePicker(input?: HTMLInputElement): void {
+  if (!input) return
+  const picker = input as HTMLInputElement & { showPicker?: () => void }
+  if (typeof picker.showPicker !== "function") return
+  try {
+    picker.showPicker()
+  } catch {
+    // 部分浏览器不允许多次触发，用户仍可点击日历图标
+  }
 }
 
 function studentCountByClass(classId: string): number {
@@ -970,6 +1894,11 @@ async function fetchCourses(): Promise<void> {
   courses.value = res.data.data || []
 }
 
+async function fetchUpdates(): Promise<void> {
+  const res = await request.get<ApiResult<UpdateRow[]>>("/api/admin/updates")
+  updates.value = res.data.data || []
+}
+
 async function loadAll(): Promise<void> {
   pageLoading.value = true
   pageError.value = ""
@@ -979,7 +1908,8 @@ async function loadAll(): Promise<void> {
       fetchTeachers(),
       fetchStudents(),
       fetchClasses(),
-      fetchCourses()
+      fetchCourses(),
+      fetchUpdates()
     ])
   } catch (error: unknown) {
     if (isAuthError(error)) {
@@ -1123,12 +2053,34 @@ function resetCourseForm() {
   courseForm.teacher_id = ""
   courseForm.class_id = ""
   courseForm.course_date = todayText()
-  courseForm.time = ""
+  courseForm.course_end_date = todayText()
+  courseForm.start_hour = ""
+  courseForm.start_minute = ""
+  courseForm.end_hour = ""
+  courseForm.end_minute = ""
 }
 
 function clearCourseForm() {
   resetCourseForm()
   courseAlert.value.show = false
+}
+
+// 生成起始日期至结束日期之间的每一天（含首尾），格式 YYYY-MM-DD；非法或倒序返回 null
+function buildCourseDates(start: string, end: string): string[] | null {
+  const startDate = new Date(`${start}T00:00:00`)
+  if (Number.isNaN(startDate.getTime())) return null
+  const endDate = new Date(`${end}T00:00:00`)
+  if (Number.isNaN(endDate.getTime()) || endDate < startDate) return null
+  const dates: string[] = []
+  const cursor = new Date(startDate)
+  while (cursor <= endDate) {
+    const year = cursor.getFullYear()
+    const month = String(cursor.getMonth() + 1).padStart(2, "0")
+    const day = String(cursor.getDate()).padStart(2, "0")
+    dates.push(`${year}-${month}-${day}`)
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  return dates
 }
 
 async function submitCourse() {
@@ -1146,28 +2098,84 @@ async function submitCourse() {
     setAlert(courseAlert, "error", "请选择上课班级")
     return
   }
-  if (courseForm.time.trim() && !validTimeRange(courseForm.time)) {
-    setAlert(courseAlert, "error", "上课时间段格式不正确，请按 HH:mm-HH:mm 填写（例如 08:00-09:40），且结束时间不早于开始时间")
-    return
+
+  let time: string | null = null
+  const anyTime = TIME_FIELD_KEYS.some((key) => courseForm[key] !== "")
+  if (anyTime) {
+    for (const key of TIME_FIELD_KEYS) {
+      if (/^\d$/.test(courseForm[key])) {
+        courseForm[key] = `0${courseForm[key]}`
+      }
+      checkTimeField(key)
+    }
+    if (TIME_FIELD_KEYS.some((key) => !courseForm[key])) {
+      setAlert(courseAlert, "error", "请完整填写开始与结束的时、分")
+      return
+    }
+    if (TIME_FIELD_KEYS.some((key) => timeErrors[key])) {
+      setAlert(courseAlert, "error", "时间超出范围：小时 00-23，分 00-59")
+      return
+    }
+    const startTime = buildTimeString(courseForm.start_hour, courseForm.start_minute)
+    const endTime = buildTimeString(courseForm.end_hour, courseForm.end_minute)
+    if (!startTime || !endTime) {
+      setAlert(courseAlert, "error", "请完整填写开始与结束的时、分")
+      return
+    }
+    time = combineTimeRange(startTime, endTime)
+    if (!time) {
+      setAlert(courseAlert, "error", "上课结束时间必须晚于开始时间")
+      return
+    }
   }
 
+  let dates: (string | null)[] = [courseForm.course_date || null]
+  if (courseForm.course_end_date) {
+    if (!courseForm.course_date) {
+      setAlert(courseAlert, "error", "请选择上课日期")
+      return
+    }
+    const range = buildCourseDates(courseForm.course_date, courseForm.course_end_date)
+    if (!range) {
+      setAlert(courseAlert, "error", "结束日期不能早于上课日期")
+      return
+    }
+    dates = range
+  }
+
+  const courseName = courseForm.name.trim()
   courseSubmitting.value = true
   try {
-    const res = await request.post<ApiResult<null>>("/api/admin/courses/create", {
-      name: courseForm.name.trim(),
-      teacher_id: courseForm.teacher_id,
-      class_id: courseForm.class_id,
-      course_date: courseForm.course_date || null,
-      time: courseForm.time.trim() || null
-    })
-    if (res.data.code === 200) {
-      setAlert(courseAlert, "success", `课程「${courseForm.name.trim()}」创建成功`)
+    let successCount = 0
+    for (const date of dates) {
+      const res = await request.post<ApiResult<null>>("/api/admin/courses/create", {
+        name: courseName,
+        teacher_id: courseForm.teacher_id,
+        class_id: courseForm.class_id,
+        course_date: date,
+        time
+      })
+      if (res.data.code === 200) {
+        successCount += 1
+      }
+    }
+    if (successCount === dates.length) {
+      if (dates.length > 1) {
+        setAlert(courseAlert, "success", `课程「${courseName}」已创建 ${successCount} 天（${dates[0]} ~ ${dates[dates.length - 1]}）`)
+      } else {
+        setAlert(courseAlert, "success", `课程「${courseName}」创建成功`)
+      }
       showToast("课程创建成功")
       courseForm.name = ""
-      courseForm.time = ""
+      courseForm.start_hour = ""
+      courseForm.start_minute = ""
+      courseForm.end_hour = ""
+      courseForm.end_minute = ""
+      courseForm.course_end_date = ""
       await fetchCourses()
     } else {
-      setAlert(courseAlert, "error", res.data.message || "创建失败")
+      setAlert(courseAlert, "error", `课程创建失败：共需创建 ${dates.length} 天，成功 ${successCount} 天`)
+      await fetchCourses()
     }
   } catch (error: unknown) {
     setAlert(courseAlert, "error", errorMessage(error, "课程创建失败"))
@@ -1454,6 +2462,399 @@ async function confirmAssignClass() {
 }
 
 // =====================================================
+// 更新日志（增 / 改 / 删）
+// =====================================================
+
+function updateTagClass(tag: string): string {
+  if (tag === "新增") return "badge-new"
+  if (tag === "优化") return "badge-opt"
+  return "badge-fix"
+}
+
+function openUpdateModal(row?: UpdateRow) {
+  if (row) {
+    updateModal.update_id = row.update_id
+    updateModal.tag = row.tag
+    updateModal.date = (row.created_at || "").slice(0, 10)
+    updateModal.content = row.content
+  } else {
+    updateModal.update_id = 0
+    updateModal.tag = "新增"
+    updateModal.date = todayText()
+    updateModal.content = ""
+  }
+  updateModal.error = ""
+  updateModal.submitting = false
+  updateModal.show = true
+}
+
+function closeUpdateModal() {
+  updateModal.show = false
+}
+
+async function submitUpdate() {
+  updateModal.error = ""
+
+  const content = updateModal.content.trim()
+
+  if (!content) {
+    updateModal.error = "请输入更新内容"
+    return
+  }
+  if (!updateModal.date) {
+    updateModal.error = "请选择日期"
+    return
+  }
+
+  updateModal.submitting = true
+  try {
+    const payload = {
+      tag: updateModal.tag,
+      content,
+      date: updateModal.date
+    }
+    const res = updateModal.update_id
+      ? await request.put<ApiResult<null>>(`/api/admin/updates/${updateModal.update_id}`, payload)
+      : await request.post<ApiResult<null>>("/api/admin/updates", payload)
+
+    if (res.data.code === 200) {
+      updateModal.show = false
+      showToast(updateModal.update_id ? "更新日志已修改" : "更新日志已添加")
+      await fetchUpdates()
+    } else {
+      updateModal.error = res.data.message || "保存失败"
+    }
+  } catch (error: unknown) {
+    if (isAuthError(error)) {
+      updateModal.show = false
+      router.replace("/login")
+      return
+    }
+    updateModal.error = errorMessage(error, "保存更新日志失败")
+  } finally {
+    updateModal.submitting = false
+  }
+}
+
+async function deleteUpdate(row: UpdateRow) {
+  if (!window.confirm(`确认删除这条「${row.tag}」更新日志？`)) {
+    return
+  }
+  try {
+    const res = await request.delete<ApiResult<null>>(`/api/admin/updates/${row.update_id}`)
+    if (res.data.code === 200) {
+      updates.value = updates.value.filter((item) => item.update_id !== row.update_id)
+      showToast("更新日志已删除")
+    } else {
+      showToast(res.data.message || "删除失败", "error")
+    }
+  } catch (error: unknown) {
+    if (isAuthError(error)) {
+      router.replace("/login")
+      return
+    }
+    showToast(errorMessage(error, "删除更新日志失败"), "error")
+  }
+}
+
+// =====================================================
+// 跨站同步（管理页）
+// =====================================================
+
+async function loadSyncStatus(): Promise<void> {
+  syncLoading.value = true
+  lastSyncError.value = ""
+  try {
+    const res = await request.get<ApiResult<SyncStatus>>("/api/admin/sync/status")
+    if (res.data.code === 200) {
+      syncStatus.value = res.data.data || null
+    }
+    // 详情表与总览并发拉取，互不阻塞
+    await Promise.all([loadSyncOutbox(), loadSyncConflicts()])
+  } catch (error: unknown) {
+    if (isAuthError(error)) {
+      showToast("登录已失效，请重新登录", "error")
+      router.replace("/login")
+      return
+    }
+    lastSyncError.value = errorMessage(error, "同步状态加载失败，请确认后端服务已启动")
+  } finally {
+    syncLoading.value = false
+  }
+}
+
+// 「刷新」按钮：点击后同样进入 3s 冷却，拉取完成后提示
+async function refreshSync(): Promise<void> {
+  startSyncCooldown()
+  await loadSyncStatus()
+  if (!lastSyncError.value) showToast("刷新已完成")
+}
+
+async function loadSyncOutbox(): Promise<void> {
+  const res = await request.get<ApiResult<{ items: SyncOutboxRow[] }>>("/api/admin/sync/outbox", {
+    params: { limit: 100 }
+  })
+  outboxItems.value = res.data.data?.items || []
+}
+
+async function loadSyncConflicts(): Promise<void> {
+  const res = await request.get<ApiResult<{ items: SyncConflictRow[]; total?: number; pending?: number }>>(
+    "/api/admin/sync/conflicts",
+    {
+      params: {
+        state: conflictState.value,
+        keyword: conflictKeyword.value.trim() || undefined
+      }
+    }
+  )
+  const data = res.data.data
+  conflictItems.value = data?.items || []
+  conflictTotal.value = data?.total ?? conflictItems.value.length
+  conflictPending.value = data?.pending ?? 0
+  // 只保留仍在当前列表里的选中项，避免跨筛选残留
+  conflictSelected.value = conflictSelected.value.filter((id) =>
+    conflictItems.value.some((row) => row.id === id)
+  )
+}
+
+function toggleConflictAll(event: Event): void {
+  const checked = (event.target as HTMLInputElement).checked
+  conflictSelected.value = checked ? conflictItems.value.map((row) => row.id) : []
+}
+
+function toggleConflictRow(id: string): void {
+  const index = conflictSelected.value.indexOf(id)
+  if (index >= 0) conflictSelected.value.splice(index, 1)
+  else conflictSelected.value.push(id)
+}
+
+// 批处理：allPending=true 时不带 id，交给后端处理全部待处理行
+async function batchHandleConflicts(action: "resolve" | "ignore", allPending = false): Promise<void> {
+  if (!allPending && !conflictSelected.value.length) return
+  syncBusy.value = true
+  try {
+    const res = await request.post<ApiResult<{ affected: number }>>("/api/admin/sync/conflicts/batch", {
+      action,
+      ids: allPending ? [] : conflictSelected.value
+    })
+    showToast(res.data.message || "已处理")
+    conflictSelected.value = []
+    await Promise.all([loadSyncConflicts(), loadSyncStatus()])
+  } catch (error: unknown) {
+    if (isAuthError(error)) {
+      showToast("登录已失效，请重新登录", "error")
+      router.replace("/login")
+      return
+    }
+    showToast(errorMessage(error, "批量处理失败"), "error")
+  } finally {
+    syncBusy.value = false
+  }
+}
+
+async function triggerSync(action: "sync" | "reconcile"): Promise<void> {
+  startSyncCooldown()
+  syncBusy.value = true
+  try {
+    await request.post<ApiResult<unknown>>("/api/admin/sync/trigger", { action })
+    showToast(action === "reconcile" ? "执行对账已完成" : "立即同步已完成")
+    // 异步同步在后台线程执行，稍后自动刷新一次结果
+    window.setTimeout(() => {
+      loadSyncStatus()
+    }, 1500)
+  } catch (error: unknown) {
+    if (isAuthError(error)) {
+      showToast("登录已失效，请重新登录", "error")
+      router.replace("/login")
+      return
+    }
+    showToast(errorMessage(error, "触发同步失败"), "error")
+  } finally {
+    syncBusy.value = false
+  }
+}
+
+// 连接对端：手动点击 / 打开同步页时进入有界自动重试
+function stopAutoConnect(): void {
+  if (autoConnectTimer !== undefined) {
+    window.clearTimeout(autoConnectTimer)
+    autoConnectTimer = undefined
+  }
+  if (autoConnectTick !== undefined) {
+    window.clearInterval(autoConnectTick)
+    autoConnectTick = undefined
+  }
+  autoConnecting.value = false
+  autoConnectElapsed.value = 0
+}
+
+// 连一次：真去触发一轮同步，再刷新对端连通性
+async function connectOnce(): Promise<void> {
+  try {
+    await request.post<ApiResult<unknown>>("/api/admin/sync/trigger", { action: "sync" })
+  } catch (error: unknown) {
+    if (isAuthError(error)) {
+      showToast("登录已失效，请重新登录", "error")
+      router.replace("/login")
+      stopAutoConnect()
+      return
+    }
+  }
+  await loadSyncStatus()
+}
+
+async function runAutoConnect(): Promise<void> {
+  if (!autoConnecting.value) return
+
+  const elapsed = Date.now() - autoConnectStartedAt
+
+  // 到 30s 上限：自动取消，需用户重新点击「连接对端」
+  if (elapsed >= AUTO_CONNECT_WINDOW) {
+    stopAutoConnect()
+    showToast("自动连接已取消，请重新点击「连接对端」", "error")
+    return
+  }
+
+  await connectOnce()
+
+  if (!autoConnecting.value) return
+
+  // 全部对端已连通：提前结束
+  if (syncPeers.value.length > 0 && syncPeers.value.every((peer) => peer.online)) {
+    stopAutoConnect()
+    showToast("连接对端已完成")
+    return
+  }
+
+  const remaining = AUTO_CONNECT_WINDOW - (Date.now() - autoConnectStartedAt)
+  autoConnectTimer = window.setTimeout(
+    runAutoConnect,
+    Math.max(0, Math.min(AUTO_CONNECT_INTERVAL, remaining))
+  )
+}
+
+function startAutoConnect(): void {
+  if (autoConnecting.value) return
+
+  autoConnecting.value = true
+  autoConnectStartedAt = Date.now()
+  autoConnectElapsed.value = 0
+
+  // 秒表：从 0s 连续跳到 30s
+  autoConnectTick = window.setInterval(() => {
+    const sec = Math.floor((Date.now() - autoConnectStartedAt) / 1000)
+    autoConnectElapsed.value = Math.min(sec, Math.floor(AUTO_CONNECT_WINDOW / 1000))
+  }, 1000)
+
+  runAutoConnect()
+}
+
+function toggleConnect(): void {
+  startSyncCooldown()
+  if (autoConnecting.value) {
+    stopAutoConnect()
+    return
+  }
+  startAutoConnect()
+}
+
+async function retryOutbox(id: number): Promise<void> {
+  syncBusy.value = true
+  try {
+    await request.post<ApiResult<unknown>>("/api/admin/sync/outbox/retry", { id })
+    showToast("已重新入队")
+    await loadSyncStatus()
+  } catch (error: unknown) {
+    if (isAuthError(error)) {
+      showToast("登录已失效，请重新登录", "error")
+      router.replace("/login")
+      return
+    }
+    showToast(errorMessage(error, "重试失败"), "error")
+  } finally {
+    syncBusy.value = false
+  }
+}
+
+async function handleConflict(id: string, action: "resolve" | "ignore"): Promise<void> {
+  syncBusy.value = true
+  try {
+    await request.post<ApiResult<unknown>>("/api/admin/sync/conflicts/handle", { id, action })
+    showToast(action === "resolve" ? "已标记为已裁决" : "已忽略该冲突")
+    await Promise.all([loadSyncConflicts(), loadSyncStatus()])
+  } catch (error: unknown) {
+    if (isAuthError(error)) {
+      showToast("登录已失效，请重新登录", "error")
+      router.replace("/login")
+      return
+    }
+    showToast(errorMessage(error, "处理冲突失败"), "error")
+  } finally {
+    syncBusy.value = false
+  }
+}
+
+function outboxStatusText(status: number): string {
+  const map: Record<number, string> = { 0: "待发送", 1: "已发送", 2: "发送失败" }
+  return map[Number(status)] || "未知"
+}
+
+function outboxBadgeClass(status: number): string {
+  const value = Number(status)
+  if (value === 1) return "badge-ok"
+  if (value === 2) return "badge-off"
+  return "badge-opt"
+}
+
+function conflictStateText(state: number): string {
+  const map: Record<number, string> = { 0: "待处理", 1: "已裁决", 2: "已忽略" }
+  return map[Number(state)] || "未知"
+}
+
+// 事件类型：与 sync_contract 中的 event_type 保持一致
+function eventTypeText(eventType: string): string {
+  const map: Record<string, string> = {
+    "attendance.signin": "签到",
+    "attendance.update": "更新",
+    "attendance.delete": "删除"
+  }
+  return map[eventType] || eventType || "-"
+}
+
+function conflictLoserText(row: SyncConflictRow): string {
+  const losers = row.loser_json?.losers
+  if (!losers || !losers.length) return "-"
+  const lines = losers.map((entry) => {
+    const parts: string[] = []
+    const site = entry.site_name || entry.site
+    if (site) parts.push(String(site))
+    if (entry.sign_time) parts.push(String(entry.sign_time))
+    if (entry.status_text) parts.push(String(entry.status_text))
+    return parts.join(" · ")
+  })
+  const text = lines.filter((line) => line).join("；")
+  return text || "-"
+}
+
+function cursorText(peerCode: string): string {
+  const row = syncStatus.value?.cursors?.[peerCode]
+  if (!row) return "未同步"
+  const suffix = row.last_success_at ? ` · ${row.last_success_at}` : ""
+  return `序号 ${row.last_seq ?? 0}${suffix}`
+}
+
+// 进入「跨站同步」页时才拉取数据，避免开屏即访问对端拖慢加载
+watch(activeTab, (tab) => {
+  if (tab === "sync") {
+    // 打开同步页自动执行一次「连接对端」
+    startAutoConnect()
+  } else {
+    // 离开同步页时停掉自动连接，避免后台空转
+    stopAutoConnect()
+  }
+})
+
+// =====================================================
 // 退出登录
 // =====================================================
 
@@ -1468,6 +2869,7 @@ function logout() {
 // =====================================================
 
 courseForm.course_date = todayText()
+courseForm.course_end_date = todayText()
 
 onMounted(() => {
   loadAll()
@@ -1509,6 +2911,10 @@ onMounted(() => {
   --red-200: #fecaca;
   --red-100: #fee2e2;
   --red-50: #fef2f2;
+
+  --cyan-700: #0e7490;
+  --cyan-200: #a5f3fc;
+  --cyan-50: #ecfeff;
 
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
@@ -1871,6 +3277,124 @@ onMounted(() => {
   overflow-x: auto;
 }
 
+/* ================= 列表筛选工具栏 ================= */
+
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.table-toolbar .toolbar-count {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+
+/* 「全部」按钮组：固定贴左；用 margin-right:auto 把其余控件顶到右侧 */
+.table-toolbar .toolbar-left {
+  display: flex;
+  gap: 8px;
+  margin-right: auto;
+}
+
+/* 隐藏时保留占位，避免切换状态时整行重排 */
+.table-toolbar .toolbar-left.is-hidden {
+  visibility: hidden;
+}
+
+/* 冲突状态下拉：给足宽度，避免「全部状态」等 3~4 字标签折行 */
+.conflict-state-select {
+  min-width: 104px;
+  flex: none;
+}
+
+.search-field {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  max-width: 340px;
+}
+
+.search-field .search-icon {
+  position: absolute;
+  left: 12px;
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: var(--gray-400);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.search-field .search-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 14px 8px 34px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--gray-900);
+  background: var(--gray-50);
+  border: 1px solid var(--gray-300);
+  border-radius: 999px;
+  transition: all 0.15s ease-out;
+}
+
+.search-field .search-input::placeholder {
+  color: var(--gray-400);
+}
+
+.search-field .search-input:hover {
+  border-color: var(--gray-400);
+}
+
+.search-field .search-input:focus {
+  outline: none;
+  background: #fff;
+  border-color: var(--blue-500);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--blue-500);
+}
+
+.update-date-filter {
+  width: 170px;
+  flex: 0 0 170px;
+  padding: 7px 12px;
+  font-size: 13px;
+}
+
+/* ================= 分页 ================= */
+
+.table-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 24px;
+  border-top: 1px solid var(--gray-200);
+}
+
+.table-pager .pager-info {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+
+.table-pager .pager-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.table-pager button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -1926,9 +3450,29 @@ onMounted(() => {
   min-width: 150px;
 }
 
+.col-update-tag {
+  width: 96px;
+}
+
+.col-update-date {
+  width: 150px;
+}
+
 .row-actions {
   display: flex;
   gap: 8px;
+}
+
+.col-check {
+  width: 40px;
+  text-align: center;
+}
+
+.col-check input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  accent-color: var(--blue-500);
 }
 
 .empty-cell {
@@ -1968,6 +3512,212 @@ onMounted(() => {
   color: var(--red-700);
   background: var(--red-50);
   border-color: var(--red-200);
+}
+
+.badge-new {
+  color: var(--blue-700);
+  background: var(--blue-50);
+  border-color: var(--blue-100);
+}
+
+.badge-opt {
+  color: var(--amber-700);
+  background: var(--amber-50);
+  border-color: var(--amber-200);
+}
+
+.badge-fix {
+  color: var(--red-700);
+  background: var(--red-50);
+  border-color: var(--red-200);
+}
+
+.badge-cyan {
+  color: var(--cyan-700);
+  background: var(--cyan-50);
+  border-color: var(--cyan-200);
+}
+
+/* ================= 跨站同步 ================= */
+
+.sync-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 16px;
+}
+
+/* 左侧一行的本站信息胶囊 */
+.sync-site {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--gray-200);
+  background: linear-gradient(180deg, #ffffff, var(--gray-50));
+  box-shadow: var(--shadow-sm);
+}
+
+.sync-site-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--green-700);
+  box-shadow: 0 0 0 3px var(--green-100);
+}
+
+.sync-site-dot-off {
+  background: var(--gray-400);
+  box-shadow: 0 0 0 3px var(--gray-100);
+}
+
+.sync-site-code {
+  font-weight: 650;
+  color: var(--gray-900);
+}
+
+.sync-site-meta {
+  font-size: 12px;
+  color: var(--gray-500);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 右侧按钮组 */
+.sync-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* 跨站同步 · 提示条（离线对端 / 加载失败） */
+.sync-alert {
+  display: flex;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--gray-200);
+  background: var(--gray-50);
+}
+
+.sync-alert-warn {
+  border-color: var(--amber-200);
+  background: var(--amber-50);
+  color: var(--amber-700);
+}
+
+.sync-alert-danger {
+  border-color: var(--red-200);
+  background: var(--red-50);
+  color: var(--red-700);
+}
+
+.sync-alert-icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+}
+
+.sync-alert-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.sync-alert-body {
+  min-width: 0;
+}
+
+.sync-alert-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sync-alert-text {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: var(--gray-600);
+  word-break: break-word;
+}
+
+.sync-alert-list {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 5px;
+}
+
+.sync-alert-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.sync-alert-list li .sync-alert-text {
+  margin: 0;
+}
+
+.sync-peer-tag {
+  flex: none;
+  padding: 1px 8px;
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: #fff;
+  border: 1px solid currentColor;
+}
+
+/* 同步进度 */
+.sync-progress {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  color: var(--gray-600);
+}
+
+.sync-progress-idle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  color: var(--gray-400);
+}
+
+.sync-progress-idle::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--gray-300);
+}
+
+/* 在线对端绿点做轻微呼吸，强化「在线」感知 */
+.sync-page .badge-ok::before {
+  animation: sync-dot-pulse 1.8s ease-out infinite;
+}
+
+@keyframes sync-dot-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(21, 128, 61, 0.35); }
+  70% { box-shadow: 0 0 0 5px rgba(21, 128, 61, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(21, 128, 61, 0); }
+}
+
+.sync-err {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ================= 按钮 ================= */
@@ -2192,13 +3942,100 @@ onMounted(() => {
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--blue-500);
 }
 
-.form-select {
-  appearance: none;
-  padding-right: 36px;
+.form-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.6;
+  color: var(--gray-900);
+  background: #fff;
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  resize: vertical;
+  transition: all 0.15s ease-out;
+}
+
+.form-textarea::placeholder {
+  color: var(--gray-400);
+}
+
+.form-textarea:hover {
+  border-color: #9ca3af;
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--blue-500);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--blue-500);
+}
+
+.cs {
+  --cs-accent: var(--blue-500);
+  --cs-border: var(--gray-300);
+  --cs-border-hover: var(--gray-400);
+  --cs-bg-hover: var(--gray-50);
+  --cs-text: var(--gray-900);
+}
+
+.date-input {
   cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
+}
+
+.time-select {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.time-cell {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.time-value {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 6px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--gray-900);
+  text-align: center;
+  background: #fff;
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.15s ease-out;
+}
+
+.time-value:hover {
+  border-color: #9ca3af;
+}
+
+.time-value:focus {
+  border-color: var(--blue-500);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--blue-500);
+}
+
+.time-value.is-empty {
+  color: var(--gray-400);
+}
+
+.time-value.is-error {
+  border-color: var(--red-700);
+  color: var(--red-700);
+}
+
+.time-value.is-error:focus {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--red-700);
+}
+
+.time-sep {
+  flex: 0 0 auto;
+  font-size: 13px;
+  color: var(--gray-600);
 }
 
 .form-actions {

@@ -1,8 +1,12 @@
-# database.py
+# core/database.py
 # MySQL 数据库连接模块（带连接池）
 
 import queue
+import re
 import threading
+import time
+
+from contextlib import contextmanager
 
 import pymysql
 
@@ -59,6 +63,116 @@ MAX_CONNECTIONS = 50
 ACQUIRE_TIMEOUT = 10
 
 
+class DBPoolBusyError(RuntimeError):
+    """
+    连接池排队超时（池内连接全部在用且等待超过 ACQUIRE_TIMEOUT）
+
+    单独定义一个异常类型，而不是直接抛 RuntimeError，
+    是为了让 main.py 能把这个异常映射成 503（服务暂不可用）
+    而不是笼统的 500（服务器内部错误）。
+    """
+
+    pass
+
+
+# ============================================================
+# 数据库写操作追踪
+# ============================================================
+#
+# core/backup.py 的「空闲自动备份」需要知道「最后一次真正改动数据」的时间。
+#
+# 为什么在游标上打点，而不是在 conn.commit() 上打点：
+# 连接是 autocommit=True，写语句一执行就已经落库，
+# commit() 根本不是所有写路径的必经点。
+#
+# 判定口径（只认「数据被改动」）：
+#
+#   - 只认 INSERT / UPDATE / DELETE / REPLACE 四类 DML；
+#   - 且影响行数 > 0（幂等的空更新不算改动）。
+#
+# 表结构变更（CREATE / ALTER / DROP）不计入，否则启动时的
+# CREATE TABLE IF NOT EXISTS 会凭空刷新一次时间戳。
+#
+# ============================================================
+
+_last_write_at = None
+_write_lock = threading.Lock()
+
+_DML_PATTERN = re.compile(
+    r"^\s*(?:/\*.*?\*/\s*|--[^\n]*\n\s*|#[^\n]*\n\s*)*(INSERT|UPDATE|DELETE|REPLACE)\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def mark_db_write():
+    """记录一次「数据被改动」的时间（内部使用）"""
+
+    global _last_write_at
+
+    with _write_lock:
+        _last_write_at = time.time()
+
+
+def get_last_write_at():
+    """最后一次数据改动的时间戳（秒）；本进程内还没改动过时返回 None"""
+
+    return _last_write_at
+
+
+class _WriteTrackingCursor:
+    """
+    包装 pymysql 游标：执行「确实改动了数据」的 DML 时打一次时间戳
+
+    只接管两个执行入口，其余属性原样透传给真实游标，
+    因此对调用方完全透明（fetchone / rowcount / close 等照常可用）。
+    """
+
+    __slots__ = ("_cursor",)
+
+    def __init__(self, cursor):
+        self._cursor = cursor
+
+    def _note(self, query):
+        """命中 DML 且影响行数 > 0 时，记录一次改动时间"""
+
+        if not isinstance(query, str) or not _DML_PATTERN.match(query):
+            return
+
+        try:
+            affected = self._cursor.rowcount
+        except Exception:
+            affected = 0
+
+        if affected and affected > 0:
+            mark_db_write()
+
+    def execute(self, *args, **kwargs):
+        result = self._cursor.execute(*args, **kwargs)
+
+        if args:
+            self._note(args[0])
+
+        return result
+
+    def executemany(self, *args, **kwargs):
+        result = self._cursor.executemany(*args, **kwargs)
+
+        if args:
+            self._note(args[0])
+
+        return result
+
+    def __getattr__(self, name):
+        return getattr(self._cursor, name)
+
+    def __enter__(self):
+        self._cursor.__enter__()
+        return self
+
+    def __exit__(self, *exc_info):
+        return self._cursor.__exit__(*exc_info)
+
+
 class _PooledConnection(pymysql.connections.Connection):
     """
     带池化的 MySQL 连接
@@ -88,6 +202,10 @@ class _PooledConnection(pymysql.connections.Connection):
         self._pool = None
         pool.release(self)
 
+    def cursor(self, *args, **kwargs):
+        # 所有 SQL 都经这里下发，因此这里是「数据改动」打点的唯一入口
+        return _WriteTrackingCursor(super().cursor(*args, **kwargs))
+
 
 class _ConnectionPool:
     """线程安全的 MySQL 连接池（基于 queue + 信号量，无第三方依赖）"""
@@ -116,7 +234,7 @@ class _ConnectionPool:
     def acquire(self):
         """取出（或新建）一条可用连接"""
         if not self._slots.acquire(timeout=ACQUIRE_TIMEOUT):
-            raise RuntimeError("数据库连接繁忙，请稍后重试")
+            raise DBPoolBusyError("数据库连接繁忙，请稍后重试")
 
         try:
             conn = self._idle.get_nowait()
@@ -183,3 +301,52 @@ def get_db():
     """
 
     return _pool.acquire()
+
+
+# ============================================================
+# 游标上下文管理器
+# ============================================================
+
+@contextmanager
+def db_cursor():
+    """
+    数据库游标上下文管理器（只读场景推荐用法）
+
+    把各接口里重复出现的下面这套模板收敛到一处：
+
+        conn = None
+        try:
+            conn = get_db()
+            cursor = conn.cursor()
+            ...
+            cursor.execute(...)
+        finally:
+            cursor.close()
+            conn.close()
+
+    改写成：
+
+        with db_cursor() as cursor:
+            cursor.execute(...)
+
+    说明：
+
+        - 退出时先关游标再归还连接（conn.close() 走连接池归还，不是断连）。
+        - 只适用于「只读」逻辑：连接是 autocommit=True，
+          不需要显式 commit / rollback。
+          写接口请保留各自的 commit + rollback 显式逻辑。
+    """
+
+    conn = get_db()
+
+    try:
+        cursor = conn.cursor()
+
+        try:
+            yield cursor
+
+        finally:
+            cursor.close()
+
+    finally:
+        conn.close()

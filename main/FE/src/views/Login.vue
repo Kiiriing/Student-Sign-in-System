@@ -7,9 +7,10 @@
     <nav class="topnav">
       <div class="nav-brand">🎓 学生签到系统</div>
       <div class="nav-links">
-        <a href="#" class="nav-link">首页</a>
-        <a href="#" class="nav-link">功能</a>
-        <a href="#" class="nav-link">帮助</a>
+        <a href="#" class="nav-link" @click.prevent="openModal('home')">首页</a>
+        <a href="#" class="nav-link" @click.prevent="openModal('features')">功能</a>
+        <a href="#" class="nav-link" @click.prevent="openModal('updates')">更新</a>
+        <a href="#" class="nav-link" @click.prevent="openModal('help')">帮助</a>
       </div>
     </nav>
 
@@ -57,11 +58,75 @@
         </div>
       </div>
     </div>
+
+    <!-- ===== 弹窗：首页 / 功能 / 更新 / 帮助（毛玻璃，点击 X 或任意处关闭） ===== -->
+    <Transition name="modal-pop">
+      <div v-if="activeModal" class="modal-mask" @click="closeModal">
+        <div class="modal-panel">
+          <button class="modal-close" type="button" aria-label="关闭" @click="closeModal">✕</button>
+          <h3 class="modal-title">{{ modalMeta?.title }}</h3>
+          <p class="modal-sub">{{ modalMeta?.subtitle }}</p>
+
+          <div v-if="activeModal === 'home'" class="modal-body">
+            <p class="modal-p">欢迎使用「学生签到系统」。登录后按角色自动跳转对应工作台：</p>
+            <ul class="modal-list">
+              <li v-for="item in HOME_ROLES" :key="item.name"><b>{{ item.name }}</b>：{{ item.desc }}</li>
+            </ul>
+          </div>
+
+          <div v-else-if="activeModal === 'features'" class="modal-body feat-grid">
+            <div v-for="f in FEATURE_LIST" :key="f.name" class="feat-item">
+              <span class="feat-icon">{{ f.icon }}</span>
+              <div>
+                <div class="feat-name">{{ f.name }}</div>
+                <div class="feat-desc">{{ f.desc }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div v-else-if="activeModal === 'help'" class="modal-body">
+            <p class="modal-p">有问题请发送邮件到 <a class="mail-link" href="mailto:liukiiriing@gmail.com">liukiiriing@gmail.com</a></p>
+          </div>
+
+          <div v-else class="modal-body updates-body">
+            <div v-if="updatesLoading" class="updates-state">加载中…</div>
+            <div v-else-if="updatesError" class="updates-state updates-error">{{ updatesError }}</div>
+            <template v-else>
+              <div v-for="group in groupedUpdates" :key="group.date" class="upd-group">
+                <div class="upd-date"><span class="upd-dot"></span>{{ group.date }}</div>
+                <div class="upd-cols">
+                  <ul class="update-list">
+                    <li v-for="u in group.left" :key="u.update_id">
+                      <span class="u-tag" :class="TAG_CLASS[u.tag] || 'u-opt'">{{ u.tag }}</span>
+                      <span class="u-text">{{ u.content }}</span>
+                    </li>
+                  </ul>
+                  <ul class="update-list">
+                    <li v-for="u in group.right" :key="u.update_id">
+                      <span class="u-tag" :class="TAG_CLASS[u.tag] || 'u-opt'">{{ u.tag }}</span>
+                      <span class="u-text">{{ u.content }}</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="upd-pager">
+                <button class="pager-btn" type="button" :disabled="updatesPage <= 1"
+                  @click.stop="changeUpdatesPage(updatesPage - 1)">上一页</button>
+                <span class="pager-info">共 {{ updatesTotalPages }} 次更新</span>
+                <button class="pager-btn" type="button" :disabled="updatesPage >= updatesTotalPages"
+                  @click.stop="changeUpdatesPage(updatesPage + 1)">下一页</button>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from "vue"
+import { ref, computed, onMounted, onBeforeUnmount } from "vue"
 import { useRouter } from "vue-router"
 import request from "../api/request"
 import { getDeviceId } from "../utils/device"
@@ -99,6 +164,112 @@ const canvasRef = ref<HTMLCanvasElement>()
 const passwordInputRef = ref<HTMLInputElement>()
 const deviceId = ref(getDeviceId())
 let animation: number
+
+// ===== 登录页弹窗：首页 / 功能 / 更新 / 帮助 =====
+type ModalKey = "home" | "features" | "updates" | "help"
+
+const activeModal = ref<ModalKey | null>(null)
+
+const MODAL_META: Record<ModalKey, { title: string; subtitle: string }> = {
+  home: { title: "首页", subtitle: "三端协同 · 快速了解" },
+  features: { title: "功能", subtitle: "系统主要能力" },
+  updates: { title: "更新", subtitle: "今日更新内容" },
+  help: { title: "帮助", subtitle: "获取支持" }
+}
+
+const modalMeta = computed(() => (activeModal.value ? MODAL_META[activeModal.value] : null))
+
+// 今天第一次打开登录页时弹一次更新提醒，按自然日记录，同一天只弹一次
+const NOTICE_KEY = "login_notice_date"
+
+function todayKey() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+
+function openModal(key: ModalKey) {
+  activeModal.value = key
+  if (key === "updates") loadUpdates(1)
+}
+
+function closeModal() {
+  activeModal.value = null
+}
+
+// ===== 更新日志：从后端接口分页拉取 =====
+interface UpdateItem {
+  update_id: number
+  tag: string
+  content: string
+  date: string
+  created_at: string
+}
+
+const updatesList = ref<UpdateItem[]>([])
+const updatesLoading = ref(false)
+const updatesError = ref("")
+const updatesPage = ref(1)
+// 总天数：一天算一次更新
+const updatesTotalPages = ref(1)
+
+// 类型 → 徽标样式类
+const TAG_CLASS: Record<string, string> = { 新增: "u-new", 优化: "u-opt", 修复: "u-fix" }
+
+// 按创建日期分组，并把每组的记录按「列优先」拆成左右两列
+// 即：先从上到下填满左列，剩余的再从上到下填右列
+const groupedUpdates = computed(() => {
+  const map = new Map<string, UpdateItem[]>()
+  for (const item of updatesList.value) {
+    const arr = map.get(item.date)
+    if (arr) arr.push(item)
+    else map.set(item.date, [item])
+  }
+  return [...map.entries()].map(([date, items]) => {
+    const half = Math.ceil(items.length / 2)
+    return { date, left: items.slice(0, half), right: items.slice(half) }
+  })
+})
+
+async function loadUpdates(page = 1) {
+  updatesLoading.value = true
+  updatesError.value = ""
+  try {
+    // 后端按日期分页：一天一页，翻页即查看更早的更新
+    const res = await request.get("/api/system/updates", { params: { page } })
+    if (res.data.code === 200) {
+      const data = res.data.data
+      updatesList.value = data.list
+      updatesPage.value = data.page
+      updatesTotalPages.value = data.total_pages
+    } else {
+      updatesError.value = res.data.message || "加载更新日志失败"
+    }
+  } catch {
+    updatesError.value = "网络异常，无法获取更新日志"
+  } finally {
+    updatesLoading.value = false
+  }
+}
+
+function changeUpdatesPage(page: number) {
+  if (page < 1 || page > updatesTotalPages.value || page === updatesPage.value) return
+  loadUpdates(page)
+}
+
+const HOME_ROLES = [
+  { name: "学生端", desc: "查看课表，一键完成课堂签到" },
+  { name: "教师端", desc: "发起课堂点名、语音朗读与数据统计" },
+  { name: "管理员端", desc: "管理教师 / 学生账户、班级与课程安排" }
+]
+
+const FEATURE_LIST = [
+  { icon: "🔐", name: "统一登录", desc: "学号 / 用户名 / 姓名 + 密码，按角色自动跳转" },
+  { icon: "📖", name: "课表与签到", desc: "学生端查看课表并完成签到" },
+  { icon: "🎙️", name: "课堂点名", desc: "语音朗读点名，逐个确认到场" },
+  { icon: "👥", name: "账户与班级", desc: "创建账户、分配班级、批量管理" },
+  { icon: "📚", name: "课程管理", desc: "支持多天重复排课与上课时间段设置" },
+  { icon: "📊", name: "数据统计", desc: "签到进度与状态分布可视化图表" }
+]
 
 // 用户名框 Enter → 聚焦到密码框
 function focusPassword() {
@@ -458,6 +629,12 @@ onMounted(() => {
   const fn = initCanvas()
   if (fn) {
     cleanupCanvas = fn
+  }
+  // 今天第一次打开登录页：弹出更新提醒（同一天只弹一次）
+  const today = todayKey()
+  if (localStorage.getItem(NOTICE_KEY) !== today) {
+    localStorage.setItem(NOTICE_KEY, today)
+    openModal("updates")
   }
 })
 
@@ -845,6 +1022,309 @@ onBeforeUnmount(() => {
   100% { transform: translateX(0); }
 }
 
+/* ===== 弹窗（毛玻璃，与登录卡片同一设计语言） ===== */
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  padding: 24px 20px;
+  overflow-y: auto;
+  background: rgba(10, 14, 30, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.modal-panel {
+  position: relative;
+  /* margin:auto 让面板在遮罩中自动居中，同时内容过高时整体可滚动而不被裁切 */
+  margin: auto;
+  width: 100%;
+  max-width: 680px;
+  padding: 28px 30px 22px;
+  border-radius: 24px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+/* 顶部一道细渐变光：点到为止的科技感 */
+.modal-panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 26px;
+  right: 26px;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.85), #a78bfa, transparent);
+  opacity: 0.75;
+  pointer-events: none;
+}
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease-out;
+}
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: rotate(90deg);
+}
+.modal-title {
+  margin: 0 0 6px;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: linear-gradient(90deg, #ffffff, #c7d2fe);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+.modal-sub {
+  margin: 0 0 20px;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  color: rgba(255, 255, 255, 0.55);
+}
+.modal-body {
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.88);
+}
+.modal-p {
+  margin: 0 0 10px;
+}
+.modal-list {
+  margin: 0;
+  padding-left: 18px;
+}
+.modal-list li {
+  margin-bottom: 8px;
+}
+.modal-list b {
+  color: #fff;
+}
+
+/* 功能网格 */
+.feat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.feat-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.feat-icon {
+  font-size: 18px;
+  line-height: 1.3;
+}
+.feat-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+.feat-desc {
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* 帮助：邮箱链接 */
+.mail-link {
+  color: #a5b4fc;
+  text-decoration: underline;
+}
+.mail-link:hover {
+  color: #fff;
+}
+
+/* 更新列表：先填满左列，再填右列（列优先） */
+.upd-cols {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.update-list {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.update-list li {
+  display: flex;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.2s ease-out, border-color 0.2s ease-out;
+}
+.update-list li:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.u-tag {
+  flex: none;
+  height: 20px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 20px;
+  border: 1px solid transparent;
+}
+.u-new {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #6ee7b7;
+}
+.u-opt {
+  background: rgba(129, 140, 248, 0.2);
+  border-color: rgba(129, 140, 248, 0.4);
+  color: #c7d2fe;
+}
+.u-fix {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fcd34d;
+}
+.u-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+/* 更新分组：按日期 */
+.upd-group {
+  margin-bottom: 18px;
+}
+.upd-group:last-child {
+  margin-bottom: 0;
+}
+.upd-date {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.92);
+}
+/* 日期下划线：淡出渐隐 */
+.upd-date::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.35), transparent);
+}
+.upd-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #a78bfa;
+  box-shadow: 0 0 8px rgba(167, 139, 250, 0.9);
+}
+
+/* 加载 / 错误状态 */
+.updates-state {
+  padding: 26px 0;
+  text-align: center;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.6);
+}
+.updates-error {
+  color: #fca5a5;
+}
+
+/* 翻页器 */
+.upd-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+.pager-btn {
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s ease-out;
+}
+.pager-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+}
+.pager-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.pager-info {
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* 弹窗过渡：遮罩淡入 + 面板缩放上浮 */
+.modal-pop-enter-active,
+.modal-pop-leave-active {
+  transition: opacity 0.25s ease-out;
+}
+.modal-pop-enter-from,
+.modal-pop-leave-to {
+  opacity: 0;
+}
+.modal-pop-enter-active .modal-panel,
+.modal-pop-leave-active .modal-panel {
+  transition: transform 0.25s ease-out, opacity 0.25s ease-out;
+}
+.modal-pop-enter-from .modal-panel,
+.modal-pop-leave-to .modal-panel {
+  opacity: 0;
+  transform: scale(0.94) translateY(10px);
+}
+
 /* ===== 响应式 ===== */
 @media (max-width: 700px) {
   .particle-canvas { display: none; }
@@ -859,6 +1339,9 @@ onBeforeUnmount(() => {
   .hero-subtitle { font-size: 13px; margin-bottom: 28px; }
   .badge-tag { font-size: 11px; margin-bottom: 18px; }
   .login-card { padding: 24px 20px; border-radius: 20px; }
+  .feat-grid { grid-template-columns: 1fr; }
+  .upd-cols { flex-direction: column; }
+  .modal-panel { padding: 24px 20px 18px; }
 }
 
 @media (max-width: 380px) {

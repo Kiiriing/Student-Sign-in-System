@@ -103,20 +103,24 @@ stu_v2/
 └── main/
     ├── BE/                       # 后端（Flask）
     │   ├── main.py               # 应用入口：JWT、CORS、日志中间件、爬虫检测
-    │   ├── database.py           # MySQL 连接配置与连接池（get_db()）
-    │   ├── auth_utils.py         # JWT 身份解析 + 角色校验（各蓝图共用）
-    │   ├── login.py              # 登录接口 /api/auth/login
-    │   ├── student.py            # 学生接口 /api/student/*
-    │   ├── teacher.py            # 教师接口 /api/teacher/*
-    │   ├── admin.py              # 管理员接口 /api/admin/*
+    │   ├── core/                 # 公共基础模块
+    │   │   ├── database.py       # MySQL 连接配置与连接池（get_db()）
+    │   │   └── auth_utils.py     # JWT 身份解析 + 角色校验（各蓝图共用）
+    │   ├── api/                  # HTTP 接口蓝图
+    │   │   ├── auth.py           # 登录接口 /api/auth/login
+    │   │   ├── student.py        # 学生接口 /api/student/*
+    │   │   ├── teacher.py        # 教师接口 /api/teacher/*
+    │   │   ├── admin.py          # 管理员接口 /api/admin/*
+    │   │   └── system.py         # 系统公共接口 /api/system/*（无需登录）
+    │   ├── sync/                 # 跨站签到数据同步
+    │   │   ├── config.py         # 站点标识与对端配置（SITE_CODE / PEERS）
+    │   │   ├── contract.py       # 归一化规则、对齐键与事件信封
+    │   │   ├── client.py         # 出站 HTTP 客户端（仅标准库 urllib）
+    │   │   ├── store.py          # 同步表（sync_cursor / sync_outbox）与读写
+    │   │   ├── worker.py         # 后台同步线程：推送 / 拉取 / 对账
+    │   │   └── api.py            # 同步接口 /api/sync/*
     │   ├── debug_jwt.py          # JWT 调试脚本
-    │   ├── logs/                 # 按天写入的请求日志（YYYY-MM-DD.log）
-    │   └── debug/                # 调试 / 压测 / 数据生成脚本
-    │       ├── scrape_attendance.py   # 爬取签到数据
-    │       ├── stress_test.py         # 并发压测
-    │       ├── test_script_signin.py  # 脚本签到检测测试
-    │       ├── create_students.py     # 批量创建学生
-    │       └── attendance_*.csv       # 导出的签到数据
+    │   └── logs/                 # 按天写入的请求日志（YYYY-MM-DD.log）
     ├── FE/                       # 前端（Vue 3 + Vite）
     │   ├── index.html            # 入口 HTML（标题：学生签到系统）
     │   ├── vite.config.ts        # 开发服务器 0.0.0.0:5173 + 产物分包
@@ -200,7 +204,7 @@ graph LR
 | 任务时段内无签到记录 | 未签到（status=7） |
 | 任务时段结束后无签到记录 | 旷课（status=3） |
 
-> 迟到宽限期为 **10 分钟**，在 `student.py` 与 `teacher.py` 中均以 `DATE_ADD(end_time, INTERVAL 10 MINUTE)` 实现。
+> 迟到宽限期为 **10 分钟**，在 `api/student.py` 与 `api/teacher.py` 中均以 `DATE_ADD(end_time, INTERVAL 10 MINUTE)` 实现。
 
 ---
 
@@ -335,7 +339,7 @@ erDiagram
 | GET | `/` | 否 | 后端健康检查 |
 | GET | `/api/test/mysql` | 否 | MySQL 连接测试 |
 
-### 6.2 认证模块（login.py）
+### 6.2 认证模块（api/auth.py）
 
 | 方法 | 路径 | 鉴权 | 说明 |
 | --- | --- | --- | --- |
@@ -377,7 +381,7 @@ erDiagram
 | 403 | 账号已被禁用；或该设备当天已登录其他学生账号 |
 | 500 | 服务器内部错误 |
 
-### 6.3 学生模块（student.py）
+### 6.3 学生模块（api/student.py）
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
@@ -399,7 +403,7 @@ erDiagram
 
 > `client_fp` 为前端浏览器指纹检测结果（命中特征 key 逗号分隔），为空表示正常浏览器。
 
-### 6.4 教师模块（teacher.py）
+### 6.4 教师模块（api/teacher.py）
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
@@ -435,7 +439,7 @@ erDiagram
 
 > `status=7`（未签到）时，后端会 **删除** 该学生签到记录，使其回到未签到状态；其他状态若记录不存在则新增（补录），且会将 `is_script` 置为 0（视为教师已人工确认）。
 
-### 6.5 管理员模块（admin.py）
+### 6.5 管理员模块（api/admin.py）
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
@@ -512,7 +516,7 @@ erDiagram
 
 ### 7.4 脚本签到标记
 
-后端 `student.py::_is_script_signin_request()` 综合 UA、请求体、爬虫会话、缺失请求头、`client_fp` 判断，命中则写入 `attendance_record.is_script = 1`，前端以 **红色「脚本签到」** 样式展示。教师手动修改状态时会清除该标记。
+后端 `api/student.py::_is_script_signin_request()` 综合 UA、请求体、爬虫会话、缺失请求头、`client_fp` 判断，命中则写入 `attendance_record.is_script = 1`，前端以 **红色「脚本签到」** 样式展示。教师手动修改状态时会清除该标记。
 
 ### 7.5 其他
 
@@ -541,7 +545,7 @@ erDiagram
 mysql -u root -p < main/sql/student_signin0917.sql
 ```
 
-2. 确认后端连接配置（`main/BE/database.py`）：
+2. 确认后端连接配置（`main/BE/core/database.py`）：
 
 ```python
 MYSQL_CONFIG = {
@@ -634,7 +638,7 @@ npm run preview  # 预览构建产物
 | 教师 | `tea` | role = 2，姓名「刘老师」，人工智能学院 |
 | 学生 | `253201301` ~ `253201342` | role = 1，用户名即学号，班级「大数据2532013」 |
 
-> 数据库中密码均为 Werkzeug 哈希值，无法反推明文。若忘记密码，可通过管理员接口 `PUT /api/admin/user/password` 重置，或使用 `main/BE/debug/` 下的脚本重建账号。
+> 数据库中密码均为 Werkzeug 哈希值，无法反推明文。若忘记密码，可通过管理员接口 `PUT /api/admin/user/password` 重置。
 
 ---
 
@@ -662,15 +666,6 @@ npm run preview  # 预览构建产物
 
 ## 12. 调试与测试脚本
 
-位于 `main/BE/debug/`：
-
-| 脚本 | 用途 |
-| --- | --- |
-| `scrape_attendance.py` | 抓取签到数据并导出 CSV |
-| `stress_test.py` | 并发 / 压力测试 |
-| `test_script_signin.py` | 脚本签到检测验证 |
-| `create_students.py` | 批量创建学生账号 |
-
 `main/BE/debug_jwt.py` 用于 JWT 生成与解码调试。
 
 ---
@@ -679,8 +674,8 @@ npm run preview  # 预览构建产物
 
 1. **生产环境务必修改 `main/BE/main.py` 中的 `JWT_SECRET_KEY`**（当前为硬编码示例值），并缩短 Token 有效期。
 2. **CORS 当前允许所有来源（`origins: "*"`）**，正式部署时请限制为可信域名。
-3. **数据库账号密码以明文写在 `database.py`**，建议改用环境变量或配置文件，并加入 `.gitignore`（`.env` 已在忽略列表中）。
-4. `main/BE/student.py` 与 `teacher.py` 中存在较多 `print` 调试输出（如 `[DEBUG ...]`），生产环境建议改为日志或移除。
-5. 签到迟到宽限期固定为 **10 分钟**，如需调整需同时修改 `student.py` 与 `teacher.py` 中的 SQL。
+3. **数据库账号密码以明文写在 `main/BE/core/database.py`**，建议改用环境变量或配置文件，并加入 `.gitignore`（`.env` 已在忽略列表中）。
+4. `main/BE/api/student.py` 与 `api/teacher.py` 中存在较多 `print` 调试输出（如 `[DEBUG ...]`），生产环境建议改为日志或移除。
+5. 签到迟到宽限期固定为 **10 分钟**，如需调整需同时修改 `api/student.py` 与 `api/teacher.py` 中的 SQL。
 6. 删除课程 / 班级 / 任务会通过外键 **级联删除** 关联的签到任务与记录，操作前请确认。
 7. 前端 `dist/` 为构建产物，可部署到 Nginx 等静态服务器；部署后需保证前端能访问后端 `:5000`。

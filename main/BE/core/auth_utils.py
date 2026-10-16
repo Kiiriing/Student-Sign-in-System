@@ -1,7 +1,7 @@
-# auth_utils.py
+# core/auth_utils.py
 # JWT 身份解析与角色校验
 #
-# student.py / teacher.py / admin.py 三个模块共用同一套逻辑，
+# api/student.py / api/teacher.py / api/admin.py 三个模块共用同一套逻辑，
 # 原先各自复制了一份（还带着调试 print），这里统一维护。
 
 import json
@@ -25,7 +25,7 @@ def get_current_user():
       1. identity 是 dict（旧登录格式）
          → user_id / role 都在 identity 里
 
-      2. identity 是 user_id 字符串（当前 login.py 的格式）
+      2. identity 是 user_id 字符串（当前 api/auth.py 的格式）
          → user_id 取 identity，role 取 claims 顶层
     """
 

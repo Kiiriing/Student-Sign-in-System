@@ -155,11 +155,8 @@
               <div class="panel-header">
                 <h2>签到任务</h2>
                 <div class="filter-row">
-                  <select v-model="taskFilter.course_name" class="form-input form-select form-select-sm" @change="fetchTasks">
-                    <option value="">全部课程</option>
-                    <option v-for="c in uniqueCourseNames" :key="c.name" :value="c.name">{{ c.name }}{{ c.count > 1 ? `（共${c.count}节课）` : '' }}</option>
-                  </select>
-                  <input v-model="taskFilter.date" class="form-input form-input-sm" type="date" @change="fetchTasks">
+                  <CustomSelect v-model="taskFilter.course_name" :options="taskCourseOptions" placeholder="全部课程" class="filter-control" size="sm" @change="fetchTasks" />
+                  <input v-model="taskFilter.date" class="form-input form-input-sm filter-control" type="date" @click="openPicker" @change="fetchTasks">
                   <button type="button" class="btn btn-secondary btn-sm" @click="resetTaskFilter">重置</button>
                 </div>
               </div>
@@ -179,7 +176,7 @@
                     <tr v-for="t in tasks" :key="t.task_id">
                       <td class="cell-strong">{{ t.course_name }}</td>
                       <td>{{ t.class_name }}</td>
-                      <td><span class="mono">{{ fmtDateTime(t.start_time) }} ~ {{ fmtDateTime(t.end_time) }}</span></td>
+                      <td><span class="mono">{{ formatDateTime(t.start_time) }} ~ {{ formatDateTime(t.end_time) }}</span></td>
                       <td>{{ t.signed_count }} / {{ t.total_count }} 人</td>
                       <td>
                         <span class="badge" :class="taskStatusClass(t)">
@@ -225,7 +222,7 @@
                   <div>
                     <h2>{{ roster.task.course_name }} - {{ roster.task.class_name }}</h2>
                     <p class="panel-sub">
-                      签到时间：<span class="mono">{{ fmtDateTime(roster.task.start_time) }} ~ {{ fmtDateTime(roster.task.end_time) }}</span>
+                      签到时间：<span class="mono">{{ formatDateTime(roster.task.start_time) }} ~ {{ formatDateTime(roster.task.end_time) }}</span>
                     </p>
                   </div>
                   <button type="button" class="btn btn-secondary btn-sm" @click="fetchRoster">刷新</button>
@@ -235,6 +232,10 @@
                   <div v-for="s in statusOptions" :key="s.value" class="stat-mini" :class="'stat-' + s.key">
                     <span class="stat-mini-label">{{ s.label }}</span>
                     <span class="stat-mini-num">{{ displayStats[s.value] || 0 }}</span>
+                  </div>
+                  <div v-if="(roster.stats.cross || 0) > 0" class="stat-mini stat-cross">
+                    <span class="stat-mini-label">已在其他网站</span>
+                    <span class="stat-mini-num">{{ roster.stats.cross || 0 }}</span>
                   </div>
                   <div class="stat-mini stat-total">
                     <span class="stat-mini-label">合计</span>
@@ -258,6 +259,7 @@
                         <th>姓名</th>
                         <th>签到时间</th>
                         <th>IP 地址</th>
+                        <th>来源</th>
                         <th>签到状态</th>
                         <th class="col-actions">操作</th>
                       </tr>
@@ -266,7 +268,7 @@
                       <tr v-for="r in roster.roster" :key="r.student_id">
                         <td><span class="mono">{{ r.student_no }}</span></td>
                         <td class="cell-strong">{{ r.student_name }}</td>
-                        <td>{{ r.sign_time ? fmtDateTime(r.sign_time) : '-' }}</td>
+                        <td>{{ r.sign_time ? formatDateTime(r.sign_time) : '-' }}</td>
                         <td>
                           <span v-if="r.ip" class="mono"
                             :class="{ 'ip-duplicate': duplicateIpSet.has(r.ip) }"
@@ -276,23 +278,23 @@
                           <span v-else>-</span>
                         </td>
                         <td>
+                          <span v-if="Number(r.is_cross) === 1" class="badge badge-cyan">
+                            {{ r.source_site_name || '其他网站' }}
+                          </span>
+                          <span v-else>-</span>
+                        </td>
+                        <td>
                           <span
                             class="badge"
-                            :class="Number(r.is_script) === 1 ? 'badge-danger' : statusBadgeClass(r.status)"
+                            :class="Number(r.is_script) === 1 ? 'badge-danger' : (Number(r.is_cross) === 1 ? 'badge-cyan' : statusBadgeClass(r.status))"
                           >{{ r.status_text }}</span>
                         </td>
                         <td>
-                          <select
-                            class="form-input form-select form-select-sm"
-                            :value="r.status"
-                            @change="changeStatus(r, ($event.target as HTMLSelectElement).value)"
-                          >
-                            <option v-for="s in statusOptions" :key="s.value" :value="s.value">{{ s.label }}</option>
-                          </select>
+                          <CustomSelect :model-value="r.status" :options="rosterStatusOptions" size="sm" @change="(value) => changeStatus(r, String(value))" />
                         </td>
                       </tr>
                       <tr v-if="roster.roster.length === 0">
-                        <td colspan="6" class="empty-cell">该班级暂无学生</td>
+                        <td colspan="7" class="empty-cell">该班级暂无学生</td>
                       </tr>
                     </tbody>
                   </table>
@@ -307,12 +309,7 @@
               <div class="panel-header">
                 <h2>课堂点名</h2>
                 <div class="filter-row">
-                  <select v-model="rollcallTaskId" class="form-input form-select form-select-sm" @change="loadRollcallRoster">
-                    <option value="">请选择签到任务</option>
-                    <option v-for="t in tasks" :key="t.task_id" :value="t.task_id">
-                      {{ t.course_name }} - {{ t.class_name }}（{{ fmtDateTime(t.start_time) }}）
-                    </option>
-                  </select>
+                  <CustomSelect v-model="rollcallTaskId" :options="rollcallTaskOptions" placeholder="请选择签到任务" class="filter-control" size="sm" @change="loadRollcallRoster" />
                 </div>
               </div>
 
@@ -332,14 +329,9 @@
 
                 <span class="rollcall-divider"></span>
 
-                <label class="rollcall-hint" style="white-space:nowrap">
+                <label class="rollcall-hint rollcall-voice-label">
                   音色：
-                  <select v-model="selectedVoiceName" class="form-input form-select form-select-sm rollcall-voice-select"
-                    @change="onVoiceChange">
-                    <option v-for="v in availableVoices" :key="v.name" :value="v.name">
-                      {{ v.name }}
-                    </option>
-                  </select>
+                  <CustomSelect v-model="selectedVoiceName" :options="voiceOptions" class="rollcall-voice-select" size="sm" @change="onVoiceChange" />
                 </label>
                 <button type="button" class="btn btn-secondary btn-sm" @click="previewVoice">试听</button>
 
@@ -385,11 +377,8 @@
               <div class="panel-header">
                 <h2>统计筛选</h2>
                 <div class="filter-row">
-                  <select v-model="statsFilter.course_id" class="form-input form-select form-select-sm" @change="fetchStats">
-                    <option value="">全部课程</option>
-                    <option v-for="c in statsCourseOptions" :key="c.id" :value="c.id">{{ c.displayName }}</option>
-                  </select>
-                  <input v-model="statsFilter.date" class="form-input form-input-sm" type="date" @change="fetchStats">
+                  <CustomSelect v-model="statsFilter.course_id" :options="statsCourseSelectOptions" placeholder="全部课程" class="filter-control" size="sm" @change="fetchStats" />
+                  <input v-model="statsFilter.date" class="form-input form-input-sm filter-control" type="date" @click="openPicker" @change="fetchStats">
                   <button type="button" class="btn btn-secondary btn-sm" @click="resetStatsFilter">重置</button>
                 </div>
               </div>
@@ -567,6 +556,11 @@ import { BarChart, LineChart, PieChart } from "echarts/charts"
 import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components"
 import { CanvasRenderer } from "echarts/renderers"
 import request from "../api/request"
+import CustomSelect from "../components/CustomSelect.vue"
+// 考勤状态 → 徽标样式：与学生端共用同一份映射（原先两边各复制了一份）
+import { attendanceStatusBadgeClass as statusBadgeClass } from "../utils/status"
+import { errorMessage, isAuthError } from "../utils/error"
+import { formatDateTime } from "../utils/format"
 
 echarts.use([
   LineChart,
@@ -615,6 +609,9 @@ interface RosterItem {
   ip: string | null
   location: string | null
   is_script?: number
+  is_cross?: number
+  source_site?: string | null
+  source_site_name?: string | null
 }
 
 interface RosterData {
@@ -628,7 +625,7 @@ interface RosterData {
     end_time: string
     status: number
   } | null
-  stats: Record<number, number>
+  stats: Record<string, number>
   roster: RosterItem[]
 }
 
@@ -903,6 +900,26 @@ const statsCourseOptions = computed(() => {
   })
 })
 
+const taskCourseOptions = computed(() => [
+  { label: "全部课程", value: "" },
+  ...uniqueCourseNames.value.map((c) => ({
+    label: c.count > 1 ? `${c.name}（共${c.count}节课）` : c.name,
+    value: c.name
+  }))
+])
+const statsCourseSelectOptions = computed(() => [
+  { label: "全部课程", value: "" },
+  ...statsCourseOptions.value.map((c) => ({ label: c.displayName, value: c.id }))
+])
+const rollcallTaskOptions = computed(() => [
+  { label: "请选择签到任务", value: "" },
+  ...tasks.value.map((t) => ({
+    label: `${t.course_name} - ${t.class_name}（${formatDateTime(t.start_time)}）`,
+    value: t.task_id
+  }))
+])
+const rosterStatusOptions = statusOptions.map((s) => ({ label: s.label, value: s.value }))
+
 const tabMeta: Record<TabKey, { title: string; desc: string }> = {
   courses: { title: "我的课程", desc: "查看授课课程并发起课堂签到" },
   tasks: { title: "签到任务", desc: "管理签到任务，查看签到进度并可提前结束" },
@@ -1054,27 +1071,9 @@ function showToast(message: string, type: AlertType = "success") {
   toastTimer = setTimeout(() => { toast.show = false }, 2800)
 }
 
-function errorMessage(error: unknown, fallback: string): string {
-  const err = error as { response?: { data?: { message?: string } } }
-  return err?.response?.data?.message || fallback
-}
-
-function isAuthError(error: unknown): boolean {
-  const status = (error as { response?: { status?: number } })?.response?.status
-  return status === 401 || status === 403
-}
-
 // =====================================================
 // 工具函数
 // =====================================================
-
-function fmtDateTime(value?: string | null): string {
-  if (!value) return "-"
-  const d = new Date(value)
-  if (isNaN(d.getTime())) return value
-  const pad = (n: number) => String(n).padStart(2, "0")
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
 
 function toBackendDT(localValue: string): string {
   // datetime-local 输出 YYYY-MM-DDTHH:mm → YYYY-MM-DD HH:mm:ss
@@ -1097,19 +1096,6 @@ function taskStatusClass(t: TaskRow): string {
 
 function canClose(t: TaskRow): boolean {
   return t.status === 1
-}
-
-function statusBadgeClass(status: number): string {
-  const map: Record<number, string> = {
-    1: "badge-ok",
-    2: "badge-warn",
-    3: "badge-danger",
-    4: "badge-purple",
-    5: "badge-cyan",
-    6: "badge-gray",
-    7: "badge-unsigned"
-  }
-  return map[status] || "badge-off"
 }
 
 // =====================================================
@@ -1362,6 +1348,16 @@ function resetStatsFilter() {
   fetchStats()
 }
 
+// 点击日期框任意位置都弹出原生选择器（不再只点小图标才触发）
+function openPicker(event: MouseEvent) {
+  const el = event.currentTarget as HTMLInputElement | null
+  try {
+    el?.showPicker?.()
+  } catch {
+    /* 部分浏览器在选择器已打开时会抛错，忽略即可 */
+  }
+}
+
 // =====================================================
 // 修改签到状态
 // =====================================================
@@ -1372,10 +1368,13 @@ async function changeStatus(row: RosterItem, value: string) {
   const oldSignTime = row.sign_time
   const oldIp = row.ip
   const oldIsScript = row.is_script
+  const oldIsCross = row.is_cross
   row.status = newStatus
   row.status_text = statusOptions.find((s) => s.value === newStatus)?.label || "未知"
   // 教师手动修改状态后清除脚本签到标记（与后端行为一致）
   row.is_script = 0
+  // 手动补录后本站已有记录，不再是"已在其他网站签到"
+  row.is_cross = 0
   // 设为"未签到"时清除签到时间和 IP
   if (newStatus === 7) {
     row.sign_time = null
@@ -1393,12 +1392,14 @@ async function changeStatus(row: RosterItem, value: string) {
       row.sign_time = oldSignTime
       row.ip = oldIp
       row.is_script = oldIsScript
+      row.is_cross = oldIsCross
       showToast(res.data.message || "修改失败", "error")
       return
     }
     // 更新统计
     if (roster.stats[oldStatus]) roster.stats[oldStatus]--
     roster.stats[newStatus] = (roster.stats[newStatus] || 0) + 1
+    if (oldIsCross === 1 && roster.stats.cross) roster.stats.cross--
     showToast(`「${row.student_name}」签到状态已更新`)
   } catch (error: unknown) {
     row.status = oldStatus
@@ -1406,6 +1407,7 @@ async function changeStatus(row: RosterItem, value: string) {
     row.sign_time = oldSignTime
     row.ip = oldIp
     row.is_script = oldIsScript
+    row.is_cross = oldIsCross
     if (isAuthError(error)) { router.replace("/login"); return }
     showToast(errorMessage(error, "修改签到状态失败"), "error")
   }
@@ -1610,6 +1612,7 @@ const rollcallMaleVoice = ref<SpeechSynthesisVoice | null>(null)
 // --- TTS 初始化 ---
 const availableVoices = ref<SpeechSynthesisVoice[]>([])
 const selectedVoiceName = ref("")
+const voiceOptions = computed(() => availableVoices.value.map((v) => ({ label: v.name, value: v.name })))
 
 function initTTS() {
   if (!("speechSynthesis" in window)) return
@@ -2107,6 +2110,9 @@ onBeforeUnmount(() => {
 .panel-sub { margin: 4px 0 0; font-size: 12px; color: var(--gray-500); }
 
 .filter-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+/* 筛选栏内下拉框与日期框统一为定长：提高优先级覆盖 .form-input{width:100%}，
+   并禁止 flex 伸缩，保证两者长度始终一致 */
+.filter-row .filter-control { flex: 0 0 250px; width: 150px; }
 
 /* ============ 课程卡片 ============ */
 .course-day-list { display: flex; flex-direction: column; gap: 24px; }
@@ -2224,6 +2230,7 @@ onBeforeUnmount(() => {
 .stat-leave .stat-mini-num { color: var(--accent2); }
 .stat-unsigned { background: #f8fafc; }
 .stat-unsigned .stat-mini-num { color: #94a3b8; }
+.stat-cross .stat-mini-num { color: var(--cyan); }
 .stat-total { background: var(--primary-soft); }
 .stat-total .stat-mini-num { color: var(--primary); }
 
@@ -2316,8 +2323,14 @@ onBeforeUnmount(() => {
   border-color: var(--primary);
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(37, 99, 235, .35);
 }
-.form-select { background: #fff; cursor: pointer; }
-.form-select-sm, .form-input-sm { padding: 5px 10px; font-size: 12px; }
+.form-input-sm { padding: 5px 10px; font-size: 12px; }
+.cs {
+  --cs-accent: var(--primary);
+  --cs-border: var(--gray-300);
+  --cs-border-hover: var(--gray-500);
+  --cs-bg-hover: var(--gray-50);
+  --cs-text: var(--gray-900);
+}
 .form-field { margin-bottom: 16px; display: flex; flex-direction: column; gap: 6px; }
 .form-field label { font-size: 13px; font-weight: 600; }
 .required { color: var(--red); }
@@ -2538,6 +2551,12 @@ onBeforeUnmount(() => {
   width: auto;
   min-width: 180px;
 }
+/* 「音色：」文字与下拉框水平排列、垂直居中，避免挤在同一列 */
+.rollcall-voice-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
 .rollcall-hint {
   font-size: 13px;
   color: var(--gray-500);
@@ -2554,7 +2573,7 @@ onBeforeUnmount(() => {
 
 .rollcall-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 10px;
 }
 .rollcall-item {
@@ -2590,12 +2609,14 @@ onBeforeUnmount(() => {
   font-weight: 600;
   font-size: 15px;
   color: var(--gray-900, #0f172a);
-  flex: 1;
+  flex: 1 1 auto;
+  white-space: nowrap;
 }
 .rollcall-no {
   font-size: 13px;
   color: var(--gray-500, #64748b);
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  flex: none;
 }
 .rollcall-status {
   flex-shrink: 0;
