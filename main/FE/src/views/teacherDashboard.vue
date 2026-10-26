@@ -560,6 +560,7 @@ import CustomSelect from "../components/CustomSelect.vue"
 // 考勤状态 → 徽标样式：与学生端共用同一份映射（原先两边各复制了一份）
 import { attendanceStatusBadgeClass as statusBadgeClass } from "../utils/status"
 import { errorMessage, isAuthError } from "../utils/error"
+import { readSession, clearSession } from "../utils/auth"
 import { formatDateTime } from "../utils/format"
 
 echarts.use([
@@ -1579,18 +1580,37 @@ function logout() {
 // 初始化
 // =====================================================
 
-onMounted(async () => {
-  const stored = localStorage.getItem("user")
-  if (stored) {
-    try {
-      const u = JSON.parse(stored)
-      const name = u.teacher_name || u.name || u.username
-      if (name) {
-        teacherName.value = name
-        teacherInitial.value = name.slice(0, 1).toUpperCase()
-      }
-    } catch { /* ignore */ }
+/**
+ * 校验教师端登录态
+ *
+ * 返回缓存的 user 对象表示可用；返回 null 表示不通过（令牌缺失/过期、
+ * 或角色不是教师），此时已清掉本地缓存并跳登录页，调用方不要再请求接口。
+ */
+function initTeacher(): Record<string, any> | null {
+  const session = readSession()
+  if (!session) {
+    router.replace("/login")
+    return null
   }
+  if (Number(session.role) !== 2) {
+    clearSession()
+    router.replace("/login")
+    return null
+  }
+  return session
+}
+
+onMounted(async () => {
+  // 登录态不通过时直接结束，不再发出 courses / tasks 等必然 401 的请求
+  const session = initTeacher()
+  if (!session) return
+
+  const name = session.teacher_name || session.name || session.username
+  if (name) {
+    teacherName.value = name
+    teacherInitial.value = name.slice(0, 1).toUpperCase()
+  }
+
   await loadAll()
   window.addEventListener("resize", handleResize)
 })

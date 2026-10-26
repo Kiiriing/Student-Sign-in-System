@@ -1251,6 +1251,7 @@ import { useRouter } from "vue-router"
 import request from "../api/request"
 import CustomSelect from "../components/CustomSelect.vue"
 import { errorMessage, isAuthError } from "../utils/error"
+import { readSession, clearSession } from "../utils/auth"
 import { formatDateTime } from "../utils/format"
 
 // =====================================================
@@ -2871,7 +2872,33 @@ function logout() {
 courseForm.course_date = todayText()
 courseForm.course_end_date = todayText()
 
+/**
+ * 校验管理端登录态
+ *
+ * 返回 true 表示本地登录态可用（令牌存在且未过期、角色为管理员），
+ * 返回 false 表示不通过：此时已清掉本地缓存并跳登录页。
+ *
+ * 校验放在发请求之前，是为了避免登录态不通过时仍然照常发出
+ * profile / teachers / students / classes / courses / updates 六个请求，
+ * 全被后端以 401 拦下（日志噪音，也会抬高同 IP 的爬虫计数）。
+ */
+function initAdmin(): boolean {
+  const session = readSession()
+  if (!session) {
+    router.replace("/login")
+    return false
+  }
+  if (Number(session.role) !== 3) {
+    clearSession()
+    router.replace("/login")
+    return false
+  }
+  return true
+}
+
 onMounted(() => {
+  // 登录态不通过时直接结束，不再发出下面那批必然 401 的请求
+  if (!initAdmin()) return
   loadAll()
 })
 </script>

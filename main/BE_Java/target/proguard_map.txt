@@ -1,0 +1,961 @@
+com.stu.signin.StudentSigninApplication -> com.stu.signin.StudentSigninApplication:
+# {"fileName":"StudentSigninApplication.java","id":"sourceFile"}
+    11:11:void <init>() -> <init>
+    14:15:void main(java.lang.String[]) -> main
+com.stu.signin.admin.AdminController -> com.stu.signin.admin.AdminController:
+# {"fileName":"AdminController.java","id":"sourceFile"}
+    com.stu.signin.admin.AdminService adminService -> a
+    com.stu.signin.security.AuthGuard authGuard -> b
+    26:29:void <init>(com.stu.signin.admin.AdminService,com.stu.signin.security.AuthGuard) -> <init>
+    32:32:com.stu.signin.security.AuthGuard$User requireAdmin(jakarta.servlet.http.HttpServletRequest) -> g
+    41:42:java.util.Map profile(jakarta.servlet.http.HttpServletRequest) -> a
+    47:48:java.util.Map users(jakarta.servlet.http.HttpServletRequest) -> b
+    53:54:java.util.Map teachers(jakarta.servlet.http.HttpServletRequest) -> c
+    59:60:java.util.Map students(jakarta.servlet.http.HttpServletRequest) -> d
+    65:66:java.util.Map classes(jakarta.servlet.http.HttpServletRequest) -> e
+    71:72:java.util.Map courses(jakarta.servlet.http.HttpServletRequest) -> f
+    82:83:java.util.Map createTeacher(jakarta.servlet.http.HttpServletRequest,java.util.Map) -> a
+    89:90:java.util.Map createStudent(jakarta.servlet.http.HttpServletRequest,java.util.Map) -> b
+    96:97:java.util.Map createCourse(jakarta.servlet.http.HttpServletRequest,java.util.Map) -> c
+    103:104:java.util.Map createClass(jakarta.servlet.http.HttpServletRequest,java.util.Map) -> d
+    114:115:java.util.Map updatePassword(jakarta.servlet.http.HttpServletRequest,java.util.Map) -> e
+    121:122:java.util.Map updateUserStatus(jakarta.servlet.http.HttpServletRequest,java.util.Map) -> f
+    132:133:java.util.Map deleteClass(jakarta.servlet.http.HttpServletRequest,java.lang.String) -> a
+    139:140:java.util.Map deleteTeacher(jakarta.servlet.http.HttpServletRequest,java.lang.String) -> b
+    146:147:java.util.Map deleteStudent(jakarta.servlet.http.HttpServletRequest,java.lang.String) -> c
+    153:154:java.util.Map deleteCourse(jakarta.servlet.http.HttpServletRequest,java.lang.String) -> d
+    164:165:java.util.Map assignStudentClass(jakarta.servlet.http.HttpServletRequest,java.util.Map) -> g
+    171:172:java.util.Map assignTeacherClass(jakarta.servlet.http.HttpServletRequest,java.util.Map) -> h
+    182:183:java.util.Map listUpdates(jakarta.servlet.http.HttpServletRequest,java.lang.String) -> e
+    189:190:java.util.Map createUpdate(jakarta.servlet.http.HttpServletRequest,java.util.Map) -> i
+    197:198:java.util.Map updateUpdate(jakarta.servlet.http.HttpServletRequest,long,java.util.Map) -> a
+    204:205:java.util.Map deleteUpdate(jakarta.servlet.http.HttpServletRequest,long) -> a
+    205:205:java.util.Map lambda$deleteUpdate$0(long) -> a
+    198:198:java.util.Map lambda$updateUpdate$0(long,java.util.Map) -> a
+    190:190:java.util.Map lambda$createUpdate$0(java.util.Map) -> a
+    183:183:java.util.Map lambda$listUpdates$0(java.lang.String) -> a
+    172:172:java.util.Map lambda$assignTeacherClass$0(java.util.Map) -> b
+    165:165:java.util.Map lambda$assignStudentClass$0(java.util.Map) -> c
+    154:154:java.util.Map lambda$deleteCourse$0(java.lang.String) -> b
+    147:147:java.util.Map lambda$deleteStudent$0(java.lang.String) -> c
+    140:140:java.util.Map lambda$deleteTeacher$0(java.lang.String) -> d
+    133:133:java.util.Map lambda$deleteClass$0(java.lang.String) -> e
+    122:122:java.util.Map lambda$updateUserStatus$0(java.util.Map) -> d
+    115:115:java.util.Map lambda$updatePassword$0(java.util.Map) -> e
+    104:104:java.util.Map lambda$createClass$0(java.util.Map) -> f
+    97:97:java.util.Map lambda$createCourse$0(java.util.Map) -> g
+    90:90:java.util.Map lambda$createStudent$0(java.util.Map) -> h
+    83:83:java.util.Map lambda$createTeacher$0(java.util.Map) -> i
+com.stu.signin.admin.AdminService -> com.stu.signin.admin.AdminService:
+# {"fileName":"AdminService.java","id":"sourceFile"}
+    java.time.format.DateTimeFormatter DATE_TIME_OUT -> a
+    java.time.format.DateTimeFormatter DATE_ONLY -> b
+    java.util.List UPDATE_TAGS -> c
+    int UPDATE_CONTENT_MAX -> d
+    org.springframework.jdbc.core.JdbcTemplate jdbc -> e
+    com.stu.signin.persistence.DbWriter writer -> f
+    com.stu.signin.persistence.DbWriteTracker tracker -> g
+    com.stu.signin.security.PasswordHasher passwordHasher -> h
+    org.springframework.transaction.support.TransactionTemplate transactionTemplate -> i
+    48:54:void <init>(org.springframework.jdbc.core.JdbcTemplate,com.stu.signin.persistence.DbWriter,com.stu.signin.persistence.DbWriteTracker,com.stu.signin.security.PasswordHasher,org.springframework.transaction.support.TransactionTemplate) -> <init>
+    61:61:java.lang.String text(java.lang.Object) -> a
+    65:65:boolean blank(java.lang.Object) -> b
+    69:76:java.util.Map userRow(java.util.Map) -> j
+    85:98:java.util.Map profile(java.lang.String) -> a
+    108:124:java.util.Map users() -> a
+    133:170:java.util.Map createTeacher(java.util.Map) -> a
+    174:176:boolean usernameExists(java.lang.String) -> g
+    184:228:java.util.Map createStudent(java.util.Map) -> b
+    236:264:java.util.Map createCourse(java.util.Map) -> c
+    272:284:java.util.Map updatePassword(java.util.Map) -> d
+    292:303:java.util.Map updateUserStatus(java.util.Map) -> e
+    311:339:java.util.Map teachers() -> b
+    347:375:java.util.Map students() -> c
+    383:393:java.util.Map classes() -> d
+    401:427:java.util.Map courses() -> e
+    435:458:java.util.Map createClass(java.util.Map) -> f
+    466:472:java.util.Map deleteClass(java.lang.String) -> b
+    480:489:java.util.Map deleteTeacher(java.lang.String) -> c
+    497:506:java.util.Map deleteStudent(java.lang.String) -> d
+    514:520:java.util.Map deleteCourse(java.lang.String) -> e
+    528:547:java.util.Map assignStudentClass(java.util.Map) -> g
+    555:574:java.util.Map assignTeacherClass(java.util.Map) -> h
+    582:613:java.util.Map listUpdates(java.lang.String) -> f
+    625:654:com.stu.signin.admin.AdminService$UpdatePayload parseUpdatePayload(java.util.Map) -> k
+    658:689:java.util.Map createUpdate(java.util.Map) -> i
+    693:716:java.util.Map updateUpdate(long,java.util.Map) -> a
+    724:730:java.util.Map deleteUpdate(long) -> a
+    739:743:java.lang.Object guard(java.lang.String,java.util.function.Supplier) -> a
+    677:682:java.sql.PreparedStatement lambda$createUpdate$1(com.stu.signin.admin.AdminService$UpdatePayload,java.sql.Connection) -> a
+    667:673:java.sql.PreparedStatement lambda$createUpdate$0(com.stu.signin.admin.AdminService$UpdatePayload,java.sql.Connection) -> b
+    213:222:void lambda$createStudent$0(java.lang.String,java.lang.String,java.lang.String,java.lang.Object,java.lang.String,java.lang.String,java.lang.Object,java.lang.Object,org.springframework.transaction.TransactionStatus) -> a
+    155:164:void lambda$createTeacher$0(java.lang.String,java.lang.String,java.lang.String,java.lang.Object,java.lang.String,java.lang.Object,java.lang.Object,org.springframework.transaction.TransactionStatus) -> a
+    35:38:void <clinit>() -> <clinit>
+com.stu.signin.admin.AdminService$UpdatePayload -> com.stu.signin.admin.AdminService$UpdatePayload:
+# {"fileName":"AdminService.java","id":"sourceFile"}
+    java.lang.String tag -> tag
+    java.lang.String content -> content
+    java.lang.String dateValue -> dateValue
+    java.lang.String error -> error
+    621:621:void <init>(java.lang.String,java.lang.String,java.lang.String,java.lang.String) -> <init>
+    621:621:java.lang.String toString() -> toString
+    621:621:int hashCode() -> hashCode
+    621:621:boolean equals(java.lang.Object) -> equals
+    621:621:java.lang.String tag() -> tag
+    621:621:java.lang.String content() -> content
+    621:621:java.lang.String dateValue() -> dateValue
+    621:621:java.lang.String error() -> error
+com.stu.signin.auth.AuthController -> com.stu.signin.auth.AuthController:
+# {"fileName":"AuthController.java","id":"sourceFile"}
+    org.slf4j.Logger log -> a
+    com.stu.signin.auth.AuthService authService -> b
+    19:21:void <init>(com.stu.signin.auth.AuthService) -> <init>
+    31:53:java.util.Map login(java.util.Map) -> a
+    58:58:java.lang.String asText(java.lang.Object) -> a
+    15:15:void <clinit>() -> <clinit>
+com.stu.signin.auth.AuthService -> com.stu.signin.auth.AuthService:
+# {"fileName":"AuthService.java","id":"sourceFile"}
+    java.lang.String FIND_USER_SQL -> a
+    org.springframework.jdbc.core.JdbcTemplate jdbcTemplate -> b
+    com.stu.signin.security.PasswordVerifier passwordVerifier -> c
+    com.stu.signin.security.JwtService jwtService -> d
+    63:67:void <init>(org.springframework.jdbc.core.JdbcTemplate,com.stu.signin.security.PasswordVerifier,com.stu.signin.security.JwtService) -> <init>
+    70:134:java.util.Map login(java.lang.String,java.lang.String,java.lang.String) -> a
+    138:138:java.lang.String toStr(java.lang.Object) -> a
+    142:145:int toInt(java.lang.Object) -> b
+com.stu.signin.backup.BackupService -> com.stu.signin.backup.BackupService:
+# {"fileName":"BackupService.java","id":"sourceFile"}
+    org.slf4j.Logger log -> a
+    java.time.format.DateTimeFormatter DAY -> b
+    java.time.format.DateTimeFormatter CLOCK -> c
+    java.lang.String DUMP_PREFIX -> d
+    java.util.regex.Pattern DUMP_NAME_PATTERN -> e
+    java.lang.String[] MYSQLDUMP_CANDIDATES -> f
+    java.lang.String[] MYSQLDUMP_GLOB_DIRS -> g
+    com.stu.signin.config.AppProperties properties -> h
+    com.stu.signin.persistence.DbWriteTracker writeTracker -> i
+    org.springframework.core.env.Environment environment -> j
+    java.util.concurrent.atomic.AtomicBoolean started -> k
+    java.lang.Long lastDumpWriteAt -> l
+    65:74:void <init>(com.stu.signin.config.AppProperties,com.stu.signin.persistence.DbWriteTracker,org.springframework.core.env.Environment) -> <init>
+    78:94:void start() -> a
+    98:102:void loopOnce() -> b
+    109:130:void maybeBackup() -> c
+    137:168:java.lang.String backupNow() -> d
+    172:172:java.lang.String fileName(java.time.LocalDateTime) -> a
+    176:223:void runMysqldump(java.nio.file.Path) -> a
+    226:250:java.util.List cleanupSameDay(java.nio.file.Path,java.nio.file.Path,java.time.LocalDateTime) -> a
+    258:301:java.nio.file.Path findMysqldump() -> e
+    305:313:java.lang.String hostFromUrl(java.lang.String) -> a
+    317:330:java.lang.String portFromUrl(java.lang.String) -> b
+    334:340:java.lang.String databaseFromUrl(java.lang.String) -> c
+    344:345:void log(java.lang.String) -> d
+    287:287:boolean lambda$findMysqldump$0(java.nio.file.Path) -> b
+    86:88:java.lang.Thread lambda$start$0(java.lang.Runnable) -> a
+    40:56:void <clinit>() -> <clinit>
+com.stu.signin.common.Api -> com.stu.signin.common.a:
+# {"fileName":"Api.java","id":"sourceFile"}
+    org.slf4j.Logger log -> a
+    19:20:void <init>() -> <init>
+    23:27:java.util.Map body(java.lang.Object[]) -> a
+    31:31:java.util.Map message(int,java.lang.String) -> a
+    40:45:java.lang.Object guard(java.lang.String,java.util.function.Supplier) -> a
+    17:17:void <clinit>() -> <clinit>
+com.stu.signin.common.ApiException -> com.stu.signin.common.ApiException:
+# {"fileName":"ApiException.java","id":"sourceFile"}
+    int status -> a
+    java.lang.String error -> b
+    15:16:void <init>(int,java.lang.String) -> <init>
+    19:22:void <init>(int,java.lang.String,java.lang.String) -> <init>
+    25:25:int getStatus() -> a
+    29:29:java.lang.String getError() -> b
+com.stu.signin.common.DbValues -> com.stu.signin.common.b:
+# {"fileName":"DbValues.java","id":"sourceFile"}
+    java.time.format.DateTimeFormatter DATE_TIME -> a
+    java.time.format.DateTimeFormatter ISO_DATE_TIME -> b
+    java.time.format.DateTimeFormatter DATE -> c
+    27:28:void <init>() -> <init>
+    31:31:java.lang.String text(java.lang.Object) -> a
+    35:41:int intValue(java.lang.Object) -> b
+    45:51:long longValue(java.lang.Object) -> c
+    55:64:java.lang.Integer nullableInt(java.lang.Object) -> d
+    70:74:java.lang.String dateTime(java.lang.Object) -> e
+    79:83:java.lang.String isoDateTime(java.lang.Object) -> f
+    88:92:java.lang.String date(java.lang.Object) -> g
+    96:127:java.time.LocalDateTime localDateTime(java.lang.Object) -> h
+    131:159:java.time.LocalDate localDate(java.lang.Object) -> i
+    163:167:java.util.Map row(java.lang.Object[]) -> a
+    171:177:java.math.BigDecimal decimal(java.lang.Object) -> j
+    23:25:void <clinit>() -> <clinit>
+com.stu.signin.common.GlobalExceptionHandler -> com.stu.signin.common.c:
+# {"fileName":"GlobalExceptionHandler.java","id":"sourceFile"}
+    org.slf4j.Logger log -> a
+    17:17:void <init>() -> <init>
+    23:27:org.springframework.http.ResponseEntity handleApi(com.stu.signin.common.ApiException,jakarta.servlet.http.HttpServletRequest) -> a
+    35:36:org.springframework.http.ResponseEntity handlePoolBusy(java.sql.SQLTransientConnectionException) -> a
+    41:41:org.springframework.http.ResponseEntity handleNotFound(java.lang.Exception) -> a
+    46:46:org.springframework.http.ResponseEntity handleMethod(org.springframework.web.HttpRequestMethodNotSupportedException) -> a
+    51:52:org.springframework.http.ResponseEntity handleOther(java.lang.Exception,jakarta.servlet.http.HttpServletRequest) -> a
+    19:19:void <clinit>() -> <clinit>
+com.stu.signin.common.RequestUtils -> com.stu.signin.common.d:
+# {"fileName":"RequestUtils.java","id":"sourceFile"}
+    7:8:void <init>() -> <init>
+    12:17:java.lang.String clientIp(jakarta.servlet.http.HttpServletRequest) -> a
+com.stu.signin.common.RootController -> com.stu.signin.common.RootController:
+# {"fileName":"RootController.java","id":"sourceFile"}
+    org.springframework.jdbc.core.JdbcTemplate jdbcTemplate -> a
+    17:19:void <init>(org.springframework.jdbc.core.JdbcTemplate) -> <init>
+    23:24:java.util.Map index() -> a
+    36:50:java.util.Map testMysql() -> b
+com.stu.signin.config.AppProperties -> com.stu.signin.config.AppProperties:
+# {"fileName":"AppProperties.java","id":"sourceFile"}
+    com.stu.signin.config.AppProperties$Jwt jwt -> jwt
+    com.stu.signin.config.AppProperties$Backup backup -> backup
+    6:6:void <init>(com.stu.signin.config.AppProperties$Jwt,com.stu.signin.config.AppProperties$Backup) -> <init>
+    5:5:java.lang.String toString() -> toString
+    5:5:int hashCode() -> hashCode
+    5:5:boolean equals(java.lang.Object) -> equals
+    5:5:com.stu.signin.config.AppProperties$Jwt jwt() -> jwt
+    5:5:com.stu.signin.config.AppProperties$Backup backup() -> backup
+com.stu.signin.config.AppProperties$Backup -> com.stu.signin.config.AppProperties$Backup:
+# {"fileName":"AppProperties.java","id":"sourceFile"}
+    java.lang.String dir -> dir
+    long idleSeconds -> idleSeconds
+    long pollSeconds -> pollSeconds
+    11:11:void <init>(java.lang.String,long,long) -> <init>
+    11:11:java.lang.String toString() -> toString
+    11:11:int hashCode() -> hashCode
+    11:11:boolean equals(java.lang.Object) -> equals
+    11:11:java.lang.String dir() -> dir
+    11:11:long idleSeconds() -> idleSeconds
+    11:11:long pollSeconds() -> pollSeconds
+com.stu.signin.config.AppProperties$Jwt -> com.stu.signin.config.AppProperties$Jwt:
+# {"fileName":"AppProperties.java","id":"sourceFile"}
+    java.lang.String secret -> secret
+    long expiresSeconds -> expiresSeconds
+    8:8:void <init>(java.lang.String,long) -> <init>
+    8:8:java.lang.String toString() -> toString
+    8:8:int hashCode() -> hashCode
+    8:8:boolean equals(java.lang.Object) -> equals
+    8:8:java.lang.String secret() -> secret
+    8:8:long expiresSeconds() -> expiresSeconds
+com.stu.signin.config.JacksonConfig -> com.stu.signin.config.JacksonConfig:
+# {"fileName":"JacksonConfig.java","id":"sourceFile"}
+    12:12:void <init>() -> <init>
+    16:16:com.fasterxml.jackson.databind.ObjectMapper objectMapper() -> a
+com.stu.signin.config.WebConfig -> com.stu.signin.config.WebConfig:
+# {"fileName":"WebConfig.java","id":"sourceFile"}
+    11:11:void <init>() -> <init>
+    15:20:void addCorsMappings(org.springframework.web.servlet.config.annotation.CorsRegistry) -> addCorsMappings
+com.stu.signin.logging.CrawlerDetector -> com.stu.signin.logging.CrawlerDetector:
+# {"fileName":"CrawlerDetector.java","id":"sourceFile"}
+    java.lang.String SYNC_API_PREFIX -> a
+    long BURST_WINDOW_MILLIS -> b
+    int BURST_THRESHOLD -> c
+    long SESSION_TTL_MILLIS -> d
+    java.lang.String[] BROWSER_CORE_HEADERS -> e
+    java.util.regex.Pattern CRAWLER_UA_REGEX -> f
+    java.util.regex.Pattern BROWSER_UA_REGEX -> g
+    java.util.regex.Pattern CRAWLER_BODY_REGEX -> h
+    java.util.Map burstWindow -> i
+    java.util.Map crawlerSessions -> j
+    30:58:void <init>() -> <init>
+    67:160:java.lang.String detect(java.lang.String,java.lang.String,java.lang.String,java.lang.String,com.fasterxml.jackson.databind.JsonNode,jakarta.servlet.http.HttpServletRequest) -> a
+    165:168:boolean isCrawlerSession(java.lang.String) -> a
+    172:180:void gcSessions() -> a
+    132:132:java.util.Deque lambda$detect$0(java.lang.String) -> b
+    38:50:void <clinit>() -> <clinit>
+com.stu.signin.logging.CrawlerDetector$Session -> com.stu.signin.logging.CrawlerDetector$Session:
+# {"fileName":"CrawlerDetector.java","id":"sourceFile"}
+    java.lang.String flag -> flag
+    long time -> time
+    54:54:void <init>(java.lang.String,long) -> <init>
+    54:54:java.lang.String toString() -> toString
+    54:54:int hashCode() -> hashCode
+    54:54:boolean equals(java.lang.Object) -> equals
+    54:54:java.lang.String flag() -> flag
+    54:54:long time() -> time
+com.stu.signin.logging.RequestLogFilter -> com.stu.signin.logging.RequestLogFilter:
+# {"fileName":"RequestLogFilter.java","id":"sourceFile"}
+    org.slf4j.Logger log -> a
+    int LOG_BODY_MAX -> b
+    com.stu.signin.logging.CrawlerDetector crawlerDetector -> c
+    com.fasterxml.jackson.databind.ObjectMapper mapper -> d
+    39:42:void <init>(com.stu.signin.logging.CrawlerDetector,com.fasterxml.jackson.databind.ObjectMapper) -> <init>
+    48:60:void doFilterInternal(jakarta.servlet.http.HttpServletRequest,jakarta.servlet.http.HttpServletResponse,jakarta.servlet.FilterChain) -> doFilterInternal
+    63:137:void writeLog(org.springframework.web.util.ContentCachingRequestWrapper,jakarta.servlet.http.HttpServletResponse,long) -> a
+    33:33:void <clinit>() -> <clinit>
+com.stu.signin.persistence.DbWriteTracker -> com.stu.signin.persistence.DbWriteTracker:
+# {"fileName":"DbWriteTracker.java","id":"sourceFile"}
+    java.util.concurrent.atomic.AtomicLong lastWriteAt -> a
+    14:16:void <init>() -> <init>
+    19:20:void mark() -> a
+    24:25:java.lang.Long lastWriteAt() -> b
+com.stu.signin.persistence.DbWriter -> com.stu.signin.persistence.DbWriter:
+# {"fileName":"DbWriter.java","id":"sourceFile"}
+    org.springframework.jdbc.core.JdbcTemplate jdbcTemplate -> a
+    com.stu.signin.persistence.DbWriteTracker tracker -> b
+    20:23:void <init>(org.springframework.jdbc.core.JdbcTemplate,com.stu.signin.persistence.DbWriteTracker) -> <init>
+    26:30:int update(java.lang.String,java.lang.Object[]) -> a
+    34:36:boolean isDml(java.lang.String) -> a
+com.stu.signin.security.AuthGuard -> com.stu.signin.security.AuthGuard:
+# {"fileName":"AuthGuard.java","id":"sourceFile"}
+    org.slf4j.Logger log -> e
+    java.lang.String ATTR_USER_ID -> a
+    java.lang.String ATTR_ROLE -> b
+    java.lang.String ATTR_REASON -> c
+    java.lang.String ATTR_DETAIL -> d
+    17:17:void <init>() -> <init>
+    31:34:com.stu.signin.security.AuthGuard$User current(jakarta.servlet.http.HttpServletRequest) -> a
+    43:55:com.stu.signin.security.AuthGuard$User require(jakarta.servlet.http.HttpServletRequest,int,java.lang.String) -> a
+    60:65:com.stu.signin.security.AuthGuard$User requireLogin(jakarta.servlet.http.HttpServletRequest) -> b
+    69:76:java.lang.String unauthorizedMessage(jakarta.servlet.http.HttpServletRequest) -> c
+    80:97:void logFailure(jakarta.servlet.http.HttpServletRequest) -> d
+    100:103:java.lang.String truncate(java.lang.String,int) -> a
+    19:19:void <clinit>() -> <clinit>
+com.stu.signin.security.AuthGuard$User -> com.stu.signin.security.AuthGuard$User:
+# {"fileName":"AuthGuard.java","id":"sourceFile"}
+    java.lang.String userId -> userId
+    java.lang.Integer role -> role
+    26:26:void <init>(java.lang.String,java.lang.Integer) -> <init>
+    26:26:java.lang.String toString() -> toString
+    26:26:int hashCode() -> hashCode
+    26:26:boolean equals(java.lang.Object) -> equals
+    26:26:java.lang.String userId() -> userId
+    26:26:java.lang.Integer role() -> role
+com.stu.signin.security.JwtAuthFilter -> com.stu.signin.security.JwtAuthFilter:
+# {"fileName":"JwtAuthFilter.java","id":"sourceFile"}
+    com.stu.signin.security.JwtService jwtService -> a
+    25:27:void <init>(com.stu.signin.security.JwtService) -> <init>
+    33:50:void doFilterInternal(jakarta.servlet.http.HttpServletRequest,jakarta.servlet.http.HttpServletResponse,jakarta.servlet.FilterChain) -> doFilterInternal
+com.stu.signin.security.JwtService -> com.stu.signin.security.JwtService:
+# {"fileName":"JwtService.java","id":"sourceFile"}
+    java.util.Base64$Encoder URL_ENCODER -> a
+    java.util.Base64$Decoder URL_DECODER -> b
+    com.fasterxml.jackson.databind.ObjectMapper mapper -> c
+    byte[] keyBytes -> d
+    long expiresSeconds -> e
+    81:85:void <init>(com.stu.signin.config.AppProperties,com.fasterxml.jackson.databind.ObjectMapper) -> <init>
+    88:110:java.lang.String createAccessToken(java.lang.String,int) -> a
+    116:166:com.stu.signin.security.JwtService$ParsedToken parse(java.lang.String) -> a
+    170:172:byte[] sign(java.lang.String) -> b
+    74:75:void <clinit>() -> <clinit>
+com.stu.signin.security.JwtService$JwtFailure -> com.stu.signin.security.JwtService$JwtFailure:
+# {"fileName":"JwtService.java","id":"sourceFile"}
+    com.stu.signin.security.JwtService$Reason reason -> a
+    37:39:void <init>(com.stu.signin.security.JwtService$Reason,java.lang.String) -> <init>
+    42:42:com.stu.signin.security.JwtService$Reason getReason() -> a
+com.stu.signin.security.JwtService$ParsedToken -> com.stu.signin.security.JwtService$ParsedToken:
+# {"fileName":"JwtService.java","id":"sourceFile"}
+    java.util.Map claims -> claims
+    46:46:void <init>(java.util.Map) -> <init>
+    49:50:java.lang.String userId() -> userId
+    54:65:java.lang.Integer role() -> role
+    69:70:java.lang.Long exp() -> exp
+    46:46:java.lang.String toString() -> toString
+    46:46:int hashCode() -> hashCode
+    46:46:boolean equals(java.lang.Object) -> equals
+    46:46:java.util.Map claims() -> claims
+com.stu.signin.security.JwtService$Reason -> com.stu.signin.security.JwtService$Reason:
+# {"fileName":"JwtService.java","id":"sourceFile"}
+    com.stu.signin.security.JwtService$Reason EXPIRED -> EXPIRED
+    com.stu.signin.security.JwtService$Reason INVALID -> INVALID
+    com.stu.signin.security.JwtService$Reason MISSING -> MISSING
+    com.stu.signin.security.JwtService$Reason[] $VALUES -> $VALUES
+    29:29:com.stu.signin.security.JwtService$Reason[] values() -> values
+    29:29:com.stu.signin.security.JwtService$Reason valueOf(java.lang.String) -> valueOf
+    29:29:void <init>(java.lang.String,int) -> <init>
+    29:29:com.stu.signin.security.JwtService$Reason[] $values() -> $values
+    29:30:void <clinit>() -> <clinit>
+com.stu.signin.security.PasswordHasher -> com.stu.signin.security.PasswordHasher:
+# {"fileName":"PasswordHasher.java","id":"sourceFile"}
+    int N -> a
+    int R -> b
+    int P -> c
+    int DK_LEN -> d
+    int SALT_BYTES -> e
+    java.security.SecureRandom random -> f
+    18:26:void <init>() -> <init>
+    29:36:java.lang.String generate(java.lang.String) -> a
+    40:45:java.lang.String hex(byte[]) -> a
+com.stu.signin.security.PasswordVerifier -> com.stu.signin.security.PasswordVerifier:
+# {"fileName":"PasswordVerifier.java","id":"sourceFile"}
+    17:17:void <init>() -> <init>
+    20:35:boolean matches(java.lang.String,java.lang.String) -> a
+    39:60:boolean matchesScrypt(java.lang.String,java.lang.String) -> b
+    64:88:boolean matchesPbkdf2(java.lang.String,java.lang.String) -> c
+    92:105:byte[] hexToBytes(java.lang.String) -> a
+com.stu.signin.student.StudentController -> com.stu.signin.student.StudentController:
+# {"fileName":"StudentController.java","id":"sourceFile"}
+    com.stu.signin.student.StudentService studentService -> a
+    com.stu.signin.security.AuthGuard authGuard -> b
+    26:29:void <init>(com.stu.signin.student.StudentService,com.stu.signin.security.AuthGuard) -> <init>
+    32:32:com.stu.signin.security.AuthGuard$User requireStudent(jakarta.servlet.http.HttpServletRequest) -> b
+    37:38:java.util.Map courses(jakarta.servlet.http.HttpServletRequest) -> a
+    46:57:org.springframework.http.ResponseEntity signin(jakarta.servlet.http.HttpServletRequest,java.util.Map) -> a
+    64:69:java.util.Map records(jakarta.servlet.http.HttpServletRequest,java.lang.String) -> a
+    75:76:java.util.Map classAttendance(jakarta.servlet.http.HttpServletRequest,java.lang.String) -> b
+    77:77:java.util.Map lambda$classAttendance$0(com.stu.signin.security.AuthGuard$User,java.lang.String) -> a
+    67:67:java.util.List lambda$records$0(com.stu.signin.security.AuthGuard$User,java.lang.String) -> b
+    50:50:java.util.Map lambda$signin$0(com.stu.signin.security.AuthGuard$User,java.util.Map,jakarta.servlet.http.HttpServletRequest) -> a
+    38:38:java.util.Map lambda$courses$0(com.stu.signin.security.AuthGuard$User) -> a
+com.stu.signin.student.StudentService -> com.stu.signin.student.StudentService:
+# {"fileName":"StudentService.java","id":"sourceFile"}
+    org.slf4j.Logger log -> a
+    java.time.format.DateTimeFormatter DATE_FORMAT -> b
+    java.util.Map STATUS_MAP -> c
+    java.util.Map CLASS_STATUS_MAP -> d
+    java.util.regex.Pattern SCRIPT_UA_PATTERNS -> e
+    java.util.regex.Pattern SCRIPT_BODY_PATTERNS -> f
+    java.util.regex.Pattern BROWSER_UA_REGEX -> g
+    java.lang.String[] BROWSER_CORE_HEADERS -> h
+    org.springframework.jdbc.core.JdbcTemplate jdbc -> i
+    com.stu.signin.sync.SyncStore store -> j
+    com.stu.signin.sync.SyncConfig config -> k
+    com.stu.signin.sync.SyncWorker worker -> l
+    com.stu.signin.logging.CrawlerDetector crawlerDetector -> m
+    com.stu.signin.persistence.DbWriteTracker tracker -> n
+    com.fasterxml.jackson.databind.ObjectMapper mapper -> o
+    org.springframework.transaction.support.TransactionTemplate transactionTemplate -> p
+    94:103:void <init>(org.springframework.jdbc.core.JdbcTemplate,com.stu.signin.sync.SyncStore,com.stu.signin.sync.SyncConfig,com.stu.signin.sync.SyncWorker,com.stu.signin.logging.CrawlerDetector,com.stu.signin.persistence.DbWriteTracker,com.fasterxml.jackson.databind.ObjectMapper,org.springframework.transaction.support.TransactionTemplate) -> <init>
+    110:110:java.lang.String str(java.lang.Object) -> a
+    114:123:boolean truthy(java.lang.Object) -> b
+    127:135:java.util.Map queryStudent(java.lang.String) -> b
+    139:149:java.util.Map statusSummary() -> a
+    153:154:void bump(java.util.Map,java.lang.String) -> a
+    161:264:java.util.Map courses(java.lang.String) -> a
+    272:321:java.util.Map signin(java.lang.String,java.util.Map,jakarta.servlet.http.HttpServletRequest) -> a
+    327:474:java.util.Map doSignin(java.lang.String,java.lang.Object,java.lang.String,java.lang.String,java.lang.String,java.util.Map,jakarta.servlet.http.HttpServletRequest) -> a
+    496:658:java.util.List records(java.lang.String,java.lang.String) -> a
+    666:860:java.util.Map classAttendance(java.lang.String,java.lang.String) -> b
+    868:909:boolean isScriptSigninRequest(jakarta.servlet.http.HttpServletRequest,java.util.Map) -> a
+    655:655:java.time.LocalDateTime lambda$records$1(java.util.Map) -> a
+    581:581:java.util.List lambda$records$0(java.lang.String) -> c
+    290:290:java.util.Map lambda$signin$0(java.lang.String,java.lang.Object,java.lang.String,java.lang.String,java.lang.String,java.util.Map,jakarta.servlet.http.HttpServletRequest,org.springframework.transaction.TransactionStatus) -> a
+    44:81:void <clinit>() -> <clinit>
+com.stu.signin.student.StudentService$ApiExceptionData -> com.stu.signin.student.StudentService$ApiExceptionData:
+# {"fileName":"StudentService.java","id":"sourceFile"}
+    java.util.Map data -> a
+    482:484:void <init>(int,java.lang.String,java.util.Map) -> <init>
+    487:487:java.util.Map getData() -> c
+com.stu.signin.sync.SnapshotService -> com.stu.signin.sync.SnapshotService:
+# {"fileName":"SnapshotService.java","id":"sourceFile"}
+    int SNAPSHOT_VERSION -> a
+    int MAX_CLASS_DIGITS -> b
+    org.springframework.jdbc.core.JdbcTemplate jdbc -> c
+    com.stu.signin.sync.SyncStore store -> d
+    39:42:void <init>(org.springframework.jdbc.core.JdbcTemplate,com.stu.signin.sync.SyncStore) -> <init>
+    50:50:java.util.List asList(java.lang.Object) -> c
+    55:55:java.util.Map asMap(java.lang.Object) -> d
+    59:60:java.lang.String stamp(java.lang.Object) -> e
+    64:68:java.lang.String secondText(java.lang.Object) -> f
+    72:79:java.lang.String[] splitTimeSlot(java.lang.Object) -> g
+    83:87:java.time.LocalDateTime dayStart(java.lang.Object,java.lang.String) -> a
+    92:100:java.lang.String md5Hex(java.lang.String) -> a
+    109:117:int classIdOf(java.lang.Object) -> a
+    121:128:java.lang.String statusToRemote(java.lang.Object) -> b
+    133:136:java.lang.String sourceOf(java.lang.Object,java.lang.Object) -> a
+    140:143:java.lang.String snapshotRecordId(java.lang.Object,java.lang.Object,java.lang.Object) -> a
+    151:175:java.util.List snapshotStudents() -> b
+    179:206:java.util.List snapshotSessions(java.lang.String) -> b
+    210:244:java.util.List snapshotRecords(java.lang.String) -> c
+    248:257:java.util.Map buildSnapshot(int) -> a
+    261:261:java.util.Map buildSnapshot() -> a
+    269:280:java.util.Map classOfStudent(java.util.Map) -> a
+    284:306:java.util.Map timeSlotsOfSessions(java.util.Map) -> b
+    310:314:java.lang.String periodOf(java.util.Map,java.time.LocalDateTime) -> a
+    321:366:java.util.List recordsToEvents(java.util.Map,java.lang.String) -> c
+    370:374:java.util.List snapshotToEvents(java.util.Map,java.lang.String) -> a
+    378:421:java.util.Map importSnapshot(java.util.Map,java.lang.String) -> b
+com.stu.signin.sync.SnapshotService$EventPair -> com.stu.signin.sync.SnapshotService$EventPair:
+# {"fileName":"SnapshotService.java","id":"sourceFile"}
+    java.lang.String studentNo -> studentNo
+    java.util.Map event -> event
+    317:317:void <init>(java.lang.String,java.util.Map) -> <init>
+    317:317:java.lang.String toString() -> toString
+    317:317:int hashCode() -> hashCode
+    317:317:boolean equals(java.lang.Object) -> equals
+    317:317:java.lang.String studentNo() -> studentNo
+    317:317:java.util.Map event() -> event
+com.stu.signin.sync.SyncAdminController -> com.stu.signin.sync.SyncAdminController:
+# {"fileName":"SyncAdminController.java","id":"sourceFile"}
+    long PEER_PROBE_TTL_MILLIS -> a
+    com.stu.signin.sync.SyncConfig config -> b
+    com.stu.signin.sync.SyncStore store -> c
+    com.stu.signin.sync.SyncWorker worker -> d
+    com.stu.signin.security.AuthGuard authGuard -> e
+    com.stu.signin.sync.SyncClient client -> f
+    com.fasterxml.jackson.databind.ObjectMapper mapper -> g
+    java.lang.Object probeLock -> h
+    java.util.List probeCache -> i
+    long probeTime -> j
+    boolean refreshing -> k
+    44:57:void <init>(com.stu.signin.sync.SyncConfig,com.stu.signin.sync.SyncStore,com.stu.signin.sync.SyncWorker,com.stu.signin.security.AuthGuard,com.stu.signin.sync.SyncClient,com.fasterxml.jackson.databind.ObjectMapper) -> <init>
+    64:100:java.util.Map probePeer(com.stu.signin.sync.SyncConfig$SyncPeer) -> a
+    104:125:java.util.List probeAllPeers() -> a
+    129:150:java.util.List peersStatus() -> b
+    154:168:void refreshPeers() -> c
+    175:185:java.lang.Object normalizeValue(java.lang.Object) -> a
+    189:196:java.util.Map rowToDict(java.util.Map) -> a
+    201:203:int toInt(java.lang.Object,int) -> a
+    213:233:java.util.Map status(jakarta.servlet.http.HttpServletRequest) -> a
+    242:264:java.util.Map outbox(jakarta.servlet.http.HttpServletRequest,java.lang.String,java.lang.String) -> a
+    270:287:java.util.Map outboxRetry(jakarta.servlet.http.HttpServletRequest,java.util.Map) -> a
+    297:353:java.util.Map conflicts(jakarta.servlet.http.HttpServletRequest,java.lang.String,java.lang.String,java.lang.String) -> a
+    359:377:java.util.Map conflictHandle(jakarta.servlet.http.HttpServletRequest,java.util.Map) -> b
+    383:409:java.util.Map conflictBatch(jakarta.servlet.http.HttpServletRequest,java.util.Map) -> c
+    415:434:java.util.Map trigger(jakarta.servlet.http.HttpServletRequest,java.util.Map) -> d
+    113:113:java.util.Map lambda$probeAllPeers$0(com.stu.signin.sync.SyncConfig$SyncPeer) -> b
+com.stu.signin.sync.SyncClient -> com.stu.signin.sync.SyncClient:
+# {"fileName":"SyncClient.java","id":"sourceFile"}
+    com.fasterxml.jackson.databind.ObjectMapper mapper -> a
+    java.net.http.HttpClient httpClient -> b
+    34:40:void <init>(com.fasterxml.jackson.databind.ObjectMapper) -> <init>
+    44:91:com.fasterxml.jackson.databind.JsonNode requestJson(java.lang.String,java.lang.String,java.lang.String,java.lang.Object,double) -> a
+    96:105:boolean isTimeout(java.lang.Throwable) -> a
+    109:109:com.fasterxml.jackson.databind.JsonNode postJson(java.lang.String,java.lang.Object,java.lang.String,double) -> a
+    113:113:com.fasterxml.jackson.databind.JsonNode getJson(java.lang.String,java.lang.String,double) -> a
+    117:121:java.lang.String joinUrl(java.lang.String,java.lang.String) -> a
+    126:136:java.lang.String cleanText(java.lang.String) -> a
+    141:144:java.util.Map asMap(com.fasterxml.jackson.databind.JsonNode) -> a
+com.stu.signin.sync.SyncClient$SyncHttpException -> com.stu.signin.sync.SyncClient$SyncHttpException:
+# {"fileName":"SyncClient.java","id":"sourceFile"}
+    27:28:void <init>(java.lang.String) -> <init>
+com.stu.signin.sync.SyncConfig -> com.stu.signin.sync.SyncConfig:
+# {"fileName":"SyncConfig.java","id":"sourceFile"}
+    java.lang.String PROTOCOL_CONTRACT -> a
+    java.lang.String PROTOCOL_SNAPSHOT -> b
+    int PUSH_TIMEOUT -> c
+    int PULL_TIMEOUT -> d
+    double CHECK_TIMEOUT -> e
+    double CHECK_TOTAL_TIMEOUT -> f
+    int PULL_LIMIT -> g
+    int PUSH_BATCH_SIZE -> h
+    int MAX_RETRY -> i
+    int CACHE_TTL -> j
+    int RECONCILE_DAYS -> k
+    int SNAPSHOT_TIMEOUT -> l
+    int SNAPSHOT_MIN_INTERVAL -> m
+    java.lang.String SNAPSHOT_DEFAULT_ORIGIN -> n
+    boolean SNAPSHOT_OPEN -> o
+    java.lang.String siteCode -> p
+    java.lang.String siteName -> q
+    java.util.List peers -> r
+    45:63:void <init>() -> <init>
+    66:67:java.lang.String env(java.lang.String,java.lang.String) -> a
+    71:71:java.lang.String siteCode() -> a
+    75:75:java.lang.String siteName() -> b
+    79:79:java.util.List peers() -> c
+    83:88:com.stu.signin.sync.SyncConfig$SyncPeer getPeer(java.lang.String) -> a
+    92:95:java.lang.String peerProtocol(com.stu.signin.sync.SyncConfig$SyncPeer) -> a
+    99:99:java.util.List contractPeers() -> d
+    103:103:java.util.List snapshotPeers() -> e
+    107:115:com.stu.signin.sync.SyncConfig$SyncPeer getPeerByToken(java.lang.String) -> b
+    119:123:java.util.Map peerNames() -> f
+    127:134:java.lang.String siteNameOf(java.lang.String) -> c
+    103:103:boolean lambda$snapshotPeers$0(com.stu.signin.sync.SyncConfig$SyncPeer) -> b
+    99:99:boolean lambda$contractPeers$0(com.stu.signin.sync.SyncConfig$SyncPeer) -> c
+com.stu.signin.sync.SyncConfig$SyncPeer -> com.stu.signin.sync.SyncConfig$SyncPeer:
+# {"fileName":"SyncConfig.java","id":"sourceFile"}
+    java.lang.String code -> code
+    java.lang.String name -> name
+    java.lang.String protocol -> protocol
+    java.lang.String baseUrl -> baseUrl
+    java.lang.String token -> token
+    38:38:void <init>(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String) -> <init>
+    38:38:java.lang.String toString() -> toString
+    38:38:int hashCode() -> hashCode
+    38:38:boolean equals(java.lang.Object) -> equals
+    38:38:java.lang.String code() -> code
+    38:38:java.lang.String name() -> name
+    38:38:java.lang.String protocol() -> protocol
+    38:38:java.lang.String baseUrl() -> baseUrl
+    38:38:java.lang.String token() -> token
+com.stu.signin.sync.SyncContract -> com.stu.signin.sync.SyncContract:
+# {"fileName":"SyncContract.java","id":"sourceFile"}
+    java.lang.String SCHEMA_VERSION -> a
+    java.lang.String EVENT_SIGNIN -> b
+    java.lang.String EVENT_UPDATE -> c
+    java.lang.String EVENT_DELETE -> d
+    java.util.List EVENT_TYPES -> e
+    java.lang.String ALIGN_SEP -> f
+    java.util.Map STATUS_TEXT -> g
+    java.util.Map STATUS_ALIAS -> h
+    java.time.ZoneId LOCAL_ZONE -> i
+    java.util.regex.Pattern TIME_RE -> j
+    java.util.regex.Pattern LONG_DIGITS_RE -> k
+    java.time.format.DateTimeFormatter DATE_FORMAT -> l
+    java.time.format.DateTimeFormatter DATE_TIME_FORMAT -> m
+    68:69:void <init>() -> <init>
+    79:83:java.lang.String normalizeText(java.lang.Object) -> a
+    87:107:java.lang.String normalizeTimeSlot(java.lang.Object) -> b
+    111:144:java.lang.String normalizeDate(java.lang.Object) -> c
+    148:173:java.lang.String normalizePeriod(java.lang.Object) -> d
+    177:196:java.lang.Integer normalizeAttendanceStatus(java.lang.Object) -> e
+    200:208:java.lang.String normalizeClassKey(java.lang.Object) -> f
+    212:216:java.lang.String buildAlignKey(java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object) -> a
+    221:228:java.lang.String alignKeyOfPayload(java.lang.Object) -> g
+    236:246:java.lang.String toIso(java.lang.Object) -> h
+    250:302:java.time.LocalDateTime toDbDateTime(java.lang.Object) -> i
+    306:327:java.time.LocalDateTime toLocalDateTime(java.lang.Object) -> j
+    331:331:java.lang.String nowText() -> a
+    359:392:java.util.Map buildEvent(java.lang.String,java.lang.String,java.lang.String,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object) -> a
+    396:396:java.lang.String emptyToNull(java.lang.String) -> a
+    400:406:int toInt(java.lang.Object) -> k
+    410:456:com.stu.signin.sync.SyncContract$ValidationResult validateEvent(java.util.Map) -> a
+    33:66:void <clinit>() -> <clinit>
+com.stu.signin.sync.SyncContract$ValidationResult -> com.stu.signin.sync.SyncContract$ValidationResult:
+# {"fileName":"SyncContract.java","id":"sourceFile"}
+    boolean valid -> valid
+    java.lang.String reason -> reason
+    71:71:void <init>(boolean,java.lang.String) -> <init>
+    71:71:java.lang.String toString() -> toString
+    71:71:int hashCode() -> hashCode
+    71:71:boolean equals(java.lang.Object) -> equals
+    71:71:boolean valid() -> valid
+    71:71:java.lang.String reason() -> reason
+com.stu.signin.sync.SyncController -> com.stu.signin.sync.SyncController:
+# {"fileName":"SyncController.java","id":"sourceFile"}
+    java.time.format.DateTimeFormatter TIME_FORMAT -> a
+    java.time.format.DateTimeFormatter FILE_STAMP -> b
+    com.stu.signin.sync.SyncConfig config -> c
+    com.stu.signin.sync.SyncStore store -> d
+    com.stu.signin.sync.SnapshotService snapshotService -> e
+    com.stu.signin.sync.SyncWorker worker -> f
+    com.stu.signin.security.AuthGuard authGuard -> g
+    44:50:void <init>(com.stu.signin.sync.SyncConfig,com.stu.signin.sync.SyncStore,com.stu.signin.sync.SnapshotService,com.stu.signin.sync.SyncWorker,com.stu.signin.security.AuthGuard) -> <init>
+    57:61:com.stu.signin.sync.SyncConfig$SyncPeer requirePeer(java.lang.String) -> a
+    66:68:int toInt(java.lang.Object,int) -> a
+    78:84:java.util.Map health() -> a
+    90:92:org.springframework.http.ResponseEntity export() -> b
+    100:110:org.springframework.http.ResponseEntity download() -> c
+    116:131:org.springframework.http.ResponseEntity importSnapshot(java.lang.Object) -> a
+    139:168:java.util.Map inboundPush(java.lang.String,java.util.Map) -> a
+    177:196:java.util.Map inboundPull(java.lang.String,java.lang.String,java.lang.String) -> a
+    204:264:java.util.Map checkDup(java.lang.String,java.util.Map) -> b
+    269:278:java.util.Map reconcile(jakarta.servlet.http.HttpServletRequest) -> a
+    34:35:void <clinit>() -> <clinit>
+com.stu.signin.sync.SyncInitializer -> com.stu.signin.sync.SyncInitializer:
+# {"fileName":"SyncInitializer.java","id":"sourceFile"}
+    org.slf4j.Logger log -> a
+    com.stu.signin.sync.SyncStore store -> b
+    com.stu.signin.sync.SyncWorker worker -> c
+    26:29:void <init>(com.stu.signin.sync.SyncStore,com.stu.signin.sync.SyncWorker) -> <init>
+    34:50:void run(org.springframework.boot.ApplicationArguments) -> run
+    21:21:void <clinit>() -> <clinit>
+com.stu.signin.sync.SyncStore -> com.stu.signin.sync.SyncStore:
+# {"fileName":"SyncStore.java","id":"sourceFile"}
+    int RESOLVE_PENDING -> a
+    int RESOLVE_VALID -> b
+    int RESOLVE_VOID -> c
+    int OUTBOX_PENDING -> d
+    int OUTBOX_SENT -> e
+    int OUTBOX_FAILED -> f
+    int CONFLICT_PENDING -> g
+    int CONFLICT_RESOLVED -> h
+    int CONFLICT_IGNORED -> i
+    java.lang.String VALID_CROSS_CONDITION -> j
+    java.util.List CREATE_STATEMENTS -> k
+    java.lang.String INGEST_SQL -> l
+    java.lang.String ECHO_CHECK_SQL -> m
+    org.springframework.jdbc.core.JdbcTemplate jdbc -> n
+    com.stu.signin.persistence.DbWriter writer -> o
+    com.fasterxml.jackson.databind.ObjectMapper mapper -> p
+    com.stu.signin.sync.SyncConfig config -> q
+    187:192:void <init>(org.springframework.jdbc.core.JdbcTemplate,com.stu.signin.persistence.DbWriter,com.fasterxml.jackson.databind.ObjectMapper,com.stu.signin.sync.SyncConfig) -> <init>
+    199:208:void ensureSyncTables() -> a
+    211:218:boolean columnExists(java.lang.String,java.lang.String) -> e
+    229:256:com.stu.signin.sync.SyncStore$LocalCourse resolveLocalCourse(java.lang.String,java.lang.Object,java.lang.String) -> a
+    261:366:com.stu.signin.sync.SyncStore$IngestResult ingestEvents(java.util.List) -> a
+    370:373:java.util.Map rejectedItem(java.util.Map,java.lang.String) -> a
+    386:388:java.util.Map buildLocalSigninEvent(java.lang.String,java.lang.String,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.String,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object,java.lang.Object) -> a
+    396:418:int enqueueEventToPeers(java.util.Map) -> a
+    422:438:int retireOutboxForSnapshotPeers() -> b
+    442:449:java.util.List pendingOutbox(int) -> a
+    453:458:void markOutboxSent(long) -> a
+    461:466:void markOutboxRejected(long,java.lang.String) -> a
+    469:485:void markOutboxFailed(long,int,java.lang.String) -> a
+    488:519:com.stu.signin.sync.SyncStore$OutboundBatch fetchOutboundBatch(java.lang.String,long,int) -> a
+    527:529:long getCursor(java.lang.String) -> a
+    533:556:void saveCursor(java.lang.String,long,boolean,java.lang.String) -> a
+    559:566:java.util.Map cursorSnapshot() -> c
+    574:618:java.util.Map findLocalDuplicate(java.lang.String,java.lang.String) -> a
+    622:637:java.util.Map findCrossDuplicate(java.lang.String,java.lang.String) -> b
+    641:670:java.util.Map crossSignsForStudent(java.lang.String,java.lang.String) -> c
+    674:706:java.util.Map crossSignsForCourse(java.lang.Object) -> a
+    714:737:int countSignedStudents(java.lang.String,java.lang.String,java.lang.Object,java.lang.Object) -> a
+    741:783:int[] attendanceStatusCounts(java.lang.String,java.lang.String,java.lang.Object,java.lang.Object) -> b
+    793:892:java.util.Map taskStats(java.util.List) -> b
+    896:918:java.util.List crossRecordsForStudent(java.lang.String,java.lang.String) -> d
+    931:1103:java.util.Map reconcile() -> d
+    1111:1121:java.util.Map outboxStats() -> e
+    1125:1141:java.util.List listOutbox(java.lang.Integer,int) -> a
+    1145:1149:int retryOutbox(long) -> b
+    1153:1156:int countPendingOutbox() -> f
+    1160:1170:java.util.List listConflicts(java.lang.Integer,int,java.lang.String) -> a
+    1174:1179:int countConflicts(java.lang.Integer,java.lang.String) -> a
+    1183:1193:java.lang.String conflictWhere(java.lang.Integer,java.lang.String,java.util.List) -> a
+    1197:1224:int handleConflicts(java.lang.String,java.lang.String,java.util.List) -> a
+    1228:1231:int countPendingConflicts() -> g
+    1235:1240:int handleConflict(java.lang.String,java.lang.String,java.lang.String) -> a
+    1244:1253:java.util.Map crossRecordCount() -> h
+    1261:1270:int compareNullLast(java.time.LocalDateTime,java.time.LocalDateTime) -> a
+    1274:1277:java.lang.String truncate(java.lang.String,int) -> a
+    1281:1281:java.lang.String truncate(java.lang.Object,int) -> a
+    1285:1285:java.lang.String nullIfEmpty(java.lang.String) -> b
+    1289:1289:java.lang.String emptyToNull(java.lang.String) -> c
+    1293:1299:int toInt(java.lang.Object) -> b
+    1030:1030:java.lang.String lambda$reconcile$5(com.stu.signin.sync.SyncStore$Candidate) -> a
+    1029:1029:java.lang.String lambda$reconcile$4(com.stu.signin.sync.SyncStore$Candidate) -> b
+    1028:1028:java.lang.Integer lambda$reconcile$3(com.stu.signin.sync.SyncStore$Candidate) -> c
+    1027:1027:java.time.LocalDateTime lambda$reconcile$2(com.stu.signin.sync.SyncStore$Candidate) -> d
+    1000:1000:java.util.List lambda$reconcile$1(java.lang.String) -> d
+    982:982:java.util.List lambda$reconcile$0(java.lang.String) -> e
+    853:853:java.util.List lambda$taskStats$2(java.lang.String) -> f
+    829:829:java.util.Set lambda$taskStats$1(java.lang.String) -> g
+    812:812:java.util.Map lambda$taskStats$0(java.lang.String) -> h
+    47:47:void <clinit>() -> <clinit>
+com.stu.signin.sync.SyncStore$Candidate -> com.stu.signin.sync.SyncStore$Candidate:
+# {"fileName":"SyncStore.java","id":"sourceFile"}
+    java.lang.String kind -> kind
+    java.lang.String id -> id
+    java.lang.String originSite -> originSite
+    java.lang.String originRecordId -> originRecordId
+    java.time.LocalDateTime signTime -> signTime
+    java.lang.String studentName -> studentName
+    java.lang.Integer attendanceStatus -> attendanceStatus
+    java.lang.String alignKey -> alignKey
+    925:925:void <init>(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.time.LocalDateTime,java.lang.String,java.lang.Integer,java.lang.String) -> <init>
+    925:925:java.lang.String toString() -> toString
+    925:925:int hashCode() -> hashCode
+    925:925:boolean equals(java.lang.Object) -> equals
+    925:925:java.lang.String kind() -> kind
+    925:925:java.lang.String id() -> id
+    925:925:java.lang.String originSite() -> originSite
+    925:925:java.lang.String originRecordId() -> originRecordId
+    925:925:java.time.LocalDateTime signTime() -> signTime
+    925:925:java.lang.String studentName() -> studentName
+    925:925:java.lang.Integer attendanceStatus() -> attendanceStatus
+    925:925:java.lang.String alignKey() -> alignKey
+com.stu.signin.sync.SyncStore$CrossSign -> com.stu.signin.sync.SyncStore$CrossSign:
+# {"fileName":"SyncStore.java","id":"sourceFile"}
+    java.lang.String originSite -> originSite
+    java.time.LocalDateTime signTime -> signTime
+    java.lang.String studentNo -> studentNo
+    java.lang.Integer attendanceStatus -> attendanceStatus
+    154:154:void <init>(java.lang.String,java.time.LocalDateTime,java.lang.String,java.lang.Integer) -> <init>
+    154:154:java.lang.String toString() -> toString
+    154:154:int hashCode() -> hashCode
+    154:154:boolean equals(java.lang.Object) -> equals
+    154:154:java.lang.String originSite() -> originSite
+    154:154:java.time.LocalDateTime signTime() -> signTime
+    154:154:java.lang.String studentNo() -> studentNo
+    154:154:java.lang.Integer attendanceStatus() -> attendanceStatus
+com.stu.signin.sync.SyncStore$IngestResult -> com.stu.signin.sync.SyncStore$IngestResult:
+# {"fileName":"SyncStore.java","id":"sourceFile"}
+    java.util.List accepted -> accepted
+    java.util.List duplicated -> duplicated
+    java.util.List rejected -> rejected
+    161:161:void <init>(java.util.List,java.util.List,java.util.List) -> <init>
+    165:169:java.util.Map toMap() -> toMap
+    161:161:java.lang.String toString() -> toString
+    161:161:int hashCode() -> hashCode
+    161:161:boolean equals(java.lang.Object) -> equals
+    161:161:java.util.List accepted() -> accepted
+    161:161:java.util.List duplicated() -> duplicated
+    161:161:java.util.List rejected() -> rejected
+com.stu.signin.sync.SyncStore$LocalCourse -> com.stu.signin.sync.SyncStore$LocalCourse:
+# {"fileName":"SyncStore.java","id":"sourceFile"}
+    java.lang.String className -> className
+    java.lang.String courseName -> courseName
+    225:225:void <init>(java.lang.String,java.lang.String) -> <init>
+    225:225:java.lang.String toString() -> toString
+    225:225:int hashCode() -> hashCode
+    225:225:boolean equals(java.lang.Object) -> equals
+    225:225:java.lang.String className() -> className
+    225:225:java.lang.String courseName() -> courseName
+com.stu.signin.sync.SyncStore$OutboundBatch -> com.stu.signin.sync.SyncStore$OutboundBatch:
+# {"fileName":"SyncStore.java","id":"sourceFile"}
+    java.util.List events -> events
+    long nextCursor -> nextCursor
+    158:158:void <init>(java.util.List,long) -> <init>
+    158:158:java.lang.String toString() -> toString
+    158:158:int hashCode() -> hashCode
+    158:158:boolean equals(java.lang.Object) -> equals
+    158:158:java.util.List events() -> events
+    158:158:long nextCursor() -> nextCursor
+com.stu.signin.sync.SyncStore$TaskContext -> com.stu.signin.sync.SyncStore$TaskContext:
+# {"fileName":"SyncStore.java","id":"sourceFile"}
+    java.lang.String taskId -> taskId
+    java.lang.String classId -> classId
+    java.time.LocalDateTime courseDate -> courseDate
+    java.lang.String period -> period
+    173:173:void <init>(java.lang.String,java.lang.String,java.time.LocalDateTime,java.lang.String) -> <init>
+    173:173:java.lang.String toString() -> toString
+    173:173:int hashCode() -> hashCode
+    173:173:boolean equals(java.lang.Object) -> equals
+    173:173:java.lang.String taskId() -> taskId
+    173:173:java.lang.String classId() -> classId
+    173:173:java.time.LocalDateTime courseDate() -> courseDate
+    173:173:java.lang.String period() -> period
+com.stu.signin.sync.SyncStore$TaskStat -> com.stu.signin.sync.SyncStore$TaskStat:
+# {"fileName":"SyncStore.java","id":"sourceFile"}
+    int signedCount -> signedCount
+    int[] counts -> counts
+    176:176:void <init>(int,int[]) -> <init>
+    178:178:int count(int) -> count
+    176:176:java.lang.String toString() -> toString
+    176:176:int hashCode() -> hashCode
+    176:176:boolean equals(java.lang.Object) -> equals
+    176:176:int signedCount() -> signedCount
+    176:176:int[] counts() -> counts
+com.stu.signin.sync.SyncWorker -> com.stu.signin.sync.SyncWorker:
+# {"fileName":"SyncWorker.java","id":"sourceFile"}
+    org.slf4j.Logger log -> a
+    com.stu.signin.sync.SyncConfig config -> b
+    com.stu.signin.sync.SyncStore store -> c
+    com.stu.signin.sync.SnapshotService snapshotService -> d
+    com.stu.signin.sync.SyncClient client -> e
+    com.fasterxml.jackson.databind.ObjectMapper mapper -> f
+    java.util.concurrent.Semaphore wakeup -> g
+    java.lang.Object startLock -> h
+    boolean started -> i
+    java.lang.Object snapshotLock -> j
+    long lastSnapshotAt -> k
+    java.util.Map checkCache -> l
+    java.lang.Object checkCacheLock -> m
+    48:65:void <init>(com.stu.signin.sync.SyncConfig,com.stu.signin.sync.SyncStore,com.stu.signin.sync.SnapshotService,com.stu.signin.sync.SyncClient,com.fasterxml.jackson.databind.ObjectMapper) -> <init>
+    68:69:void triggerSync() -> a
+    72:73:void log(java.lang.String) -> a
+    81:92:java.util.Map payloadOf(java.util.Map) -> a
+    96:207:java.util.Map flushOutbox() -> b
+    211:217:java.util.List arrayOf(com.fasterxml.jackson.databind.JsonNode) -> a
+    221:222:java.lang.String errorText(java.lang.Exception) -> a
+    230:275:java.util.Map pushSnapshotToPeers(boolean) -> a
+    283:318:java.util.Map pullSnapshot(com.stu.signin.sync.SyncConfig$SyncPeer) -> a
+    322:377:java.util.Map pullFromPeers() -> c
+    385:417:java.util.Map runOnce(boolean) -> b
+    421:431:void start() -> d
+    434:451:void loop() -> e
+    460:531:com.stu.signin.sync.SyncWorker$DuplicateCheck checkDuplicateOnPeers(java.lang.String,java.lang.String) -> a
+    535:543:java.lang.String shortError(java.lang.Exception) -> b
+    527:527:boolean lambda$checkDuplicateOnPeers$1(long,java.util.Map$Entry) -> a
+    486:486:com.fasterxml.jackson.databind.JsonNode lambda$checkDuplicateOnPeers$0(java.lang.String,java.util.Map,com.stu.signin.sync.SyncConfig$SyncPeer) -> a
+    118:118:java.util.List lambda$flushOutbox$0(java.lang.String) -> b
+    31:31:void <clinit>() -> <clinit>
+com.stu.signin.sync.SyncWorker$CachedCheck -> com.stu.signin.sync.SyncWorker$CachedCheck:
+# {"fileName":"SyncWorker.java","id":"sourceFile"}
+    long time -> time
+    com.stu.signin.sync.SyncWorker$DuplicateCheck check -> check
+    36:36:void <init>(long,com.stu.signin.sync.SyncWorker$DuplicateCheck) -> <init>
+    36:36:java.lang.String toString() -> toString
+    36:36:int hashCode() -> hashCode
+    36:36:boolean equals(java.lang.Object) -> equals
+    36:36:long time() -> time
+    36:36:com.stu.signin.sync.SyncWorker$DuplicateCheck check() -> check
+com.stu.signin.sync.SyncWorker$DuplicateCheck -> com.stu.signin.sync.SyncWorker$DuplicateCheck:
+# {"fileName":"SyncWorker.java","id":"sourceFile"}
+    java.util.Map hit -> hit
+    java.util.List warnings -> warnings
+    39:39:void <init>(java.util.Map,java.util.List) -> <init>
+    39:39:java.lang.String toString() -> toString
+    39:39:int hashCode() -> hashCode
+    39:39:boolean equals(java.lang.Object) -> equals
+    39:39:java.util.Map hit() -> hit
+    39:39:java.util.List warnings() -> warnings
+com.stu.signin.sync.SyncWorker$OutboxItem -> com.stu.signin.sync.SyncWorker$OutboxItem:
+# {"fileName":"SyncWorker.java","id":"sourceFile"}
+    long id -> id
+    java.util.Map event -> event
+    int retryCount -> retryCount
+    33:33:void <init>(long,java.util.Map,int) -> <init>
+    33:33:java.lang.String toString() -> toString
+    33:33:int hashCode() -> hashCode
+    33:33:boolean equals(java.lang.Object) -> equals
+    33:33:long id() -> id
+    33:33:java.util.Map event() -> event
+    33:33:int retryCount() -> retryCount
+com.stu.signin.system.SystemController -> com.stu.signin.system.SystemController:
+# {"fileName":"SystemController.java","id":"sourceFile"}
+    com.stu.signin.system.SystemService systemService -> a
+    15:17:void <init>(com.stu.signin.system.SystemService) -> <init>
+    23:25:java.util.Map updates(java.lang.String) -> a
+com.stu.signin.system.SystemService -> com.stu.signin.system.SystemService:
+# {"fileName":"SystemService.java","id":"sourceFile"}
+    org.slf4j.Logger log -> a
+    java.lang.String[][] INITIAL_UPDATES -> b
+    org.springframework.jdbc.core.JdbcTemplate jdbcTemplate -> c
+    40:42:void <init>(org.springframework.jdbc.core.JdbcTemplate) -> <init>
+    50:72:void ensureUpdateTable() -> a
+    77:114:java.util.Map listUpdates(java.lang.String) -> a
+    22:25:void <clinit>() -> <clinit>
+com.stu.signin.teacher.TeacherController -> com.stu.signin.teacher.TeacherController:
+# {"fileName":"TeacherController.java","id":"sourceFile"}
+    com.stu.signin.teacher.TeacherService teacherService -> a
+    com.stu.signin.security.AuthGuard authGuard -> b
+    25:28:void <init>(com.stu.signin.teacher.TeacherService,com.stu.signin.security.AuthGuard) -> <init>
+    31:31:com.stu.signin.security.AuthGuard$User requireTeacher(jakarta.servlet.http.HttpServletRequest) -> b
+    36:37:java.util.Map courses(jakarta.servlet.http.HttpServletRequest) -> a
+    43:44:java.util.Map createAttendance(jakarta.servlet.http.HttpServletRequest,java.util.Map) -> a
+    51:52:java.util.Map closeAttendance(jakarta.servlet.http.HttpServletRequest,java.util.Map) -> b
+    59:60:java.util.Map deleteAttendance(jakarta.servlet.http.HttpServletRequest,java.util.Map) -> c
+    67:72:java.util.Map records(jakarta.servlet.http.HttpServletRequest,java.lang.String) -> a
+    79:80:java.util.Map tasks(jakarta.servlet.http.HttpServletRequest,java.lang.String,java.lang.String) -> a
+    87:88:java.util.Map roster(jakarta.servlet.http.HttpServletRequest,java.lang.String) -> b
+    95:96:java.util.Map updateRecord(jakarta.servlet.http.HttpServletRequest,java.util.Map) -> d
+    104:105:java.util.Map statistics(jakarta.servlet.http.HttpServletRequest,java.lang.String,java.lang.String) -> b
+    106:106:java.util.Map lambda$statistics$0(com.stu.signin.security.AuthGuard$User,java.lang.String,java.lang.String) -> a
+    97:97:java.util.Map lambda$updateRecord$0(com.stu.signin.security.AuthGuard$User,java.util.Map) -> a
+    89:89:java.util.Map lambda$roster$0(com.stu.signin.security.AuthGuard$User,java.lang.String) -> a
+    81:81:java.util.Map lambda$tasks$0(com.stu.signin.security.AuthGuard$User,java.lang.String,java.lang.String) -> b
+    70:70:java.util.List lambda$records$0(com.stu.signin.security.AuthGuard$User,java.lang.String) -> b
+    61:61:java.util.Map lambda$deleteAttendance$0(com.stu.signin.security.AuthGuard$User,java.util.Map) -> b
+    53:53:java.util.Map lambda$closeAttendance$0(com.stu.signin.security.AuthGuard$User,java.util.Map) -> c
+    45:45:java.util.Map lambda$createAttendance$0(com.stu.signin.security.AuthGuard$User,java.util.Map) -> d
+    37:37:java.util.Map lambda$courses$0(com.stu.signin.security.AuthGuard$User) -> a
+com.stu.signin.teacher.TeacherService -> com.stu.signin.teacher.TeacherService:
+# {"fileName":"TeacherService.java","id":"sourceFile"}
+    org.slf4j.Logger log -> a
+    java.util.Map STATUS_MAP -> b
+    java.util.Map ROSTER_STATUS_MAP -> c
+    org.springframework.jdbc.core.JdbcTemplate jdbc -> d
+    com.stu.signin.sync.SyncStore store -> e
+    com.stu.signin.sync.SyncConfig config -> f
+    com.stu.signin.persistence.DbWriteTracker tracker -> g
+    56:61:void <init>(org.springframework.jdbc.core.JdbcTemplate,com.stu.signin.sync.SyncStore,com.stu.signin.sync.SyncConfig,com.stu.signin.persistence.DbWriteTracker) -> <init>
+    68:68:java.lang.String str(java.lang.Object) -> a
+    72:78:boolean truthy(java.lang.Object) -> b
+    82:84:java.lang.Object teacherId(java.lang.String) -> b
+    88:92:java.lang.Object requireTeacherId(java.lang.String) -> c
+    96:103:boolean taskBelongsToTeacher(java.lang.Object,java.lang.Object) -> a
+    107:113:java.lang.Integer statusAsInt(java.lang.Object) -> c
+    122:145:java.util.Map courses(java.lang.String) -> a
+    153:203:java.util.Map createAttendance(java.lang.String,java.util.Map) -> a
+    211:239:java.util.Map closeAttendance(java.lang.String,java.util.Map) -> b
+    247:263:java.util.Map deleteAttendance(java.lang.String,java.util.Map) -> c
+    271:328:java.util.List records(java.lang.String,java.lang.String) -> a
+    340:375:java.util.List loadTasks(java.lang.Object,java.lang.String,java.lang.String) -> a
+    379:384:java.util.Map batchStats(java.util.List) -> a
+    388:412:java.util.Map tasks(java.lang.String,java.lang.String,java.lang.String) -> a
+    420:553:java.util.Map roster(java.lang.String,java.lang.String) -> b
+    561:606:java.util.Map updateRecord(java.lang.String,java.util.Map) -> d
+    614:679:java.util.Map statistics(java.lang.String,java.lang.String,java.lang.String) -> b
+    32:49:void <clinit>() -> <clinit>
+com.stu.signin.teacher.TeacherService$TaskRow -> com.stu.signin.teacher.TeacherService$TaskRow:
+# {"fileName":"TeacherService.java","id":"sourceFile"}
+    java.util.Map raw -> raw
+    java.lang.String taskId -> taskId
+    java.lang.String classId -> classId
+    java.time.LocalDateTime courseDate -> courseDate
+    java.lang.String courseTime -> courseTime
+    int totalCount -> totalCount
+    335:335:void <init>(java.util.Map,java.lang.String,java.lang.String,java.time.LocalDateTime,java.lang.String,int) -> <init>
+    335:335:java.lang.String toString() -> toString
+    335:335:int hashCode() -> hashCode
+    335:335:boolean equals(java.lang.Object) -> equals
+    335:335:java.util.Map raw() -> raw
+    335:335:java.lang.String taskId() -> taskId
+    335:335:java.lang.String classId() -> classId
+    335:335:java.time.LocalDateTime courseDate() -> courseDate
+    335:335:java.lang.String courseTime() -> courseTime
+    335:335:int totalCount() -> totalCount

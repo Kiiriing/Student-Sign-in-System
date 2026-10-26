@@ -16,6 +16,7 @@ from sync.contract import (
 from sync.store import (
     build_local_signin_event,
     cross_records_for_student,
+    cross_signs_for_course,
     cross_signs_for_student,
     enqueue_event_to_peers,
     find_cross_duplicate,
@@ -1272,6 +1273,23 @@ def get_class_attendance():
                 for r in cursor.fetchall():
                     records_map[(str(r["student_id"]), str(r["task_id"]))] = r
 
+            # ----------------------------------------------------
+            # 本站同步回来的异地签到（按对齐键索引，整天的量一次取完）
+            #
+            # 对齐键 = 学号 | 班级键 | 课程日期 | 时段档，
+            # 所以本班同学在别的网站签的到，用同样的键也能命中
+            #（学生端原先只查 attendance_record，导致异地签到一律显示为未签到 / 旷课）。
+            # ----------------------------------------------------
+
+            try:
+
+                cross_map = cross_signs_for_course(date_str)
+
+            except Exception as e:
+
+                cross_map = {}
+                print("获取班级异地签到失败：", e)
+
             status_map = {1: "正常", 2: "迟到", 3: "旷课", 4: "早退", 5: "病假", 6: "事假", 7: "未签到"}
 
             # ----------------------------------------------------
@@ -1283,7 +1301,7 @@ def get_class_attendance():
             from datetime import datetime, timedelta
             for s in students_list:
                 row_status = {}
-                summary = {"normal": 0, "late": 0, "absent": 0, "early": 0, "sick": 0, "leave": 0, "unsigned": 0, "script": 0}
+                summary = {"normal": 0, "late": 0, "absent": 0, "early": 0, "sick": 0, "leave": 0, "unsigned": 0, "script": 0, "cross": 0}
                 for c in courses_list:
                     tid = c["task_id"]
                     key = (str(s["id"]), tid) if tid else None
@@ -1293,6 +1311,10 @@ def get_class_attendance():
                     status_text = "无任务"
                     sign_time = None
                     is_script = 0
+                    is_cross = 0
+                    source_site = SITE_CODE
+                    source_site_name = SITE_NAME
+                    cross_sign_time = None
 
                     if tid:
                         if rec:
@@ -1307,19 +1329,48 @@ def get_class_attendance():
                             else:
                                 status_text = status_map.get(status, "未知")
                         else:
-                            # 无签到记录
-                            try:
-                                t_end = c["end_time"]
-                                t_start = c["start_time"]
-                                if isinstance(t_end, str):
-                                    t_end = datetime.fromisoformat(t_end)
-                                if isinstance(t_start, str):
-                                    t_start = datetime.fromisoformat(t_start)
-                                in_window = bool(t_start and t_end and t_start <= now <= (t_end + timedelta(minutes=10)))
-                            except Exception:
-                                in_window = False
-                            status = 7 if in_window else 3
-                            status_text = status_map.get(status, "未知")
+                            # 本站无记录：先看有没有同步回来的异地签到，
+                            # 没有才按时段判断"未签到（时段内）/ 旷课（时段已过）"
+                            cross = cross_map.get(build_align_key(
+                                s["student_no"],
+                                student["class_name"],
+                                date_str,
+                                normalize_period(c["time"]),
+                            )) if cross_map else None
+
+                            if cross:
+                                # 本站无记录、但已在其他网站签到：
+                                # 计入实到（按异地记录的状态），并标明来源
+                                cross_status = cross.get("attendance_status")
+
+                                if cross_status not in (1, 2, 3, 4, 5, 6):
+                                    cross_status = 1
+
+                                status = cross_status
+                                is_cross = 1
+                                source_site = cross["origin_site"]
+                                source_site_name = site_name_of(cross["origin_site"])
+                                cross_sign_time = cross["sign_time"]
+
+                                if cross_sign_time and hasattr(cross_sign_time, "isoformat"):
+                                    cross_sign_time = cross_sign_time.isoformat()
+                                    sign_time = cross_sign_time
+
+                                status_text = "已在其他网站签到"
+                            else:
+                                # 无签到记录
+                                try:
+                                    t_end = c["end_time"]
+                                    t_start = c["start_time"]
+                                    if isinstance(t_end, str):
+                                        t_end = datetime.fromisoformat(t_end)
+                                    if isinstance(t_start, str):
+                                        t_start = datetime.fromisoformat(t_start)
+                                    in_window = bool(t_start and t_end and t_start <= now <= (t_end + timedelta(minutes=10)))
+                                except Exception:
+                                    in_window = False
+                                status = 7 if in_window else 3
+                                status_text = status_map.get(status, "未知")
                         # 汇总
                         if is_script == 1:
                             summary["script"] += 1
@@ -1331,12 +1382,20 @@ def get_class_attendance():
                         elif status == 6: summary["leave"] += 1
                         elif status == 7: summary["unsigned"] += 1
 
+                        # 已在其他网站签到的，单独成类再计一次
+                        if is_cross == 1:
+                            summary["cross"] += 1
+
                     row_status[str(c["course_id"])] = {
                         "task_id": tid,
                         "status": status,
                         "status_text": status_text,
                         "sign_time": sign_time,
-                        "is_script": is_script
+                        "is_script": is_script,
+                        "is_cross": is_cross,
+                        "source_site": source_site,
+                        "source_site_name": source_site_name,
+                        "cross_sign_time": cross_sign_time
                     }
 
                 roster.append({

@@ -272,6 +272,7 @@ import { collectBrowserFingerprint } from "../utils/fingerprint"
 // 考勤状态 → 徽标样式：与教师端共用同一份映射（原先两边各复制了一份）
 import { attendanceStatusBadgeClass as statusBadgeClass } from "../utils/status"
 import { errorMessage, isAuthError } from "../utils/error"
+import { readSession, clearSession } from "../utils/auth"
 import { useRouter } from "vue-router"
 
 const router = useRouter()
@@ -334,6 +335,10 @@ interface ClassRosterItem {
     status_text: string
     sign_time: string | null
     is_script?: number
+    is_cross?: number
+    source_site?: string | null
+    source_site_name?: string | null
+    cross_sign_time?: string | null
   }>
   summary: {
     normal: number
@@ -344,6 +349,7 @@ interface ClassRosterItem {
     leave: number
     unsigned: number
     script?: number
+    cross?: number
   }
 }
 
@@ -475,9 +481,13 @@ const courseCards = computed(() =>
  * 脚本签到统一用红色 badge-danger 样式展示
  * 后端已将 status_text 改为"脚本签到"，这里只负责样式
  */
-function cellBadgeClass(cell?: { is_script?: number; status?: number | null } | null): string {
+function cellBadgeClass(cell?: { is_script?: number; is_cross?: number; status?: number | null } | null): string {
   if (cell && Number(cell.is_script) === 1) {
     return "badge-danger"
+  }
+  // 已在其他网站签到：与「我的记录」里一致，用青色标识来源
+  if (cell && Number(cell.is_cross) === 1) {
+    return "badge-cyan"
   }
   return statusBadgeClass(cell?.status || 0)
 }
@@ -495,33 +505,35 @@ function logout() {
   router.replace("/login")
 }
 
-function initStudent() {
-  const userCache = localStorage.getItem("user")
-  const tokenCache = localStorage.getItem("access_token")
-  if (!userCache || !tokenCache) {
+/**
+ * 初始化学生信息
+ *
+ * 返回 true 表示本地登录态可用，可以继续拉取数据；
+ * 返回 false 表示登录态不通过（已跳转登录页），调用方不要再去请求接口。
+ *
+ * 之所以要有返回值：原先 onMounted 里调用本函数后并不检查结果，
+ * 本函数内部的 return 也拦不住 onMounted 后面的代码，于是登录态缺失或
+ * 令牌过期时仍会照常发出 courses / records / class-attendance 三个请求，
+ * 每次都在后端白打三个 401（日志噪音，也会抬高同 IP 的爬虫计数）。
+ */
+function initStudent(): boolean {
+  const session = readSession()
+  if (!session) {
     router.replace("/login")
-    return
+    return false
   }
-  try {
-    const data = JSON.parse(userCache)
-    const userRole = Number(data.role)
-    if (isNaN(userRole) || userRole !== 1) {
-      localStorage.removeItem("user")
-      localStorage.removeItem("access_token")
-      router.replace("/login")
-      return
-    }
-    student.value = {
-      student_id: data.student_id || "",
-      student_name: data.student_name || "",
-      student_no: data.student_no || "",
-      class_name: data.class_name || ""
-    }
-  } catch {
-    localStorage.removeItem("user")
-    localStorage.removeItem("access_token")
+  if (Number(session.role) !== 1) {
+    clearSession()
     router.replace("/login")
+    return false
   }
+  student.value = {
+    student_id: session.student_id || "",
+    student_name: session.student_name || "",
+    student_no: session.student_no || "",
+    class_name: session.class_name || ""
+  }
+  return true
 }
 
 async function getCourses() {
@@ -740,7 +752,8 @@ async function signIn(course: Course) {
 }
 
 onMounted(async () => {
-  initStudent()
+  // 没有登录态时直接结束，不再发出下面三个必然 401 的请求
+  if (!initStudent()) return
   await getCourses()
   await getRecords()
   await getClassAttendance()

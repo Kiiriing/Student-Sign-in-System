@@ -1,0 +1,283 @@
+com.stu.signin.StudentSigninApplication
+com.stu.signin.StudentSigninApplication: void main(java.lang.String[])
+com.stu.signin.admin.AdminController
+com.stu.signin.admin.AdminService
+com.stu.signin.admin.AdminService$UpdatePayload
+com.stu.signin.admin.AdminService$UpdatePayload: java.lang.String tag
+com.stu.signin.admin.AdminService$UpdatePayload: java.lang.String content
+com.stu.signin.admin.AdminService$UpdatePayload: java.lang.String dateValue
+com.stu.signin.admin.AdminService$UpdatePayload: java.lang.String error
+com.stu.signin.admin.AdminService$UpdatePayload: AdminService$UpdatePayload(java.lang.String,java.lang.String,java.lang.String,java.lang.String)
+com.stu.signin.admin.AdminService$UpdatePayload: java.lang.String toString()
+com.stu.signin.admin.AdminService$UpdatePayload: int hashCode()
+com.stu.signin.admin.AdminService$UpdatePayload: boolean equals(java.lang.Object)
+com.stu.signin.admin.AdminService$UpdatePayload: java.lang.String tag()
+com.stu.signin.admin.AdminService$UpdatePayload: java.lang.String content()
+com.stu.signin.admin.AdminService$UpdatePayload: java.lang.String dateValue()
+com.stu.signin.admin.AdminService$UpdatePayload: java.lang.String error()
+com.stu.signin.auth.AuthController
+com.stu.signin.auth.AuthService
+com.stu.signin.backup.BackupService
+com.stu.signin.common.ApiException
+com.stu.signin.common.RootController
+com.stu.signin.config.AppProperties
+com.stu.signin.config.AppProperties: com.stu.signin.config.AppProperties$Jwt jwt
+com.stu.signin.config.AppProperties: com.stu.signin.config.AppProperties$Backup backup
+com.stu.signin.config.AppProperties: AppProperties(com.stu.signin.config.AppProperties$Jwt,com.stu.signin.config.AppProperties$Backup)
+com.stu.signin.config.AppProperties: java.lang.String toString()
+com.stu.signin.config.AppProperties: int hashCode()
+com.stu.signin.config.AppProperties: boolean equals(java.lang.Object)
+com.stu.signin.config.AppProperties: com.stu.signin.config.AppProperties$Jwt jwt()
+com.stu.signin.config.AppProperties: com.stu.signin.config.AppProperties$Backup backup()
+com.stu.signin.config.AppProperties$Backup
+com.stu.signin.config.AppProperties$Backup: java.lang.String dir
+com.stu.signin.config.AppProperties$Backup: long idleSeconds
+com.stu.signin.config.AppProperties$Backup: long pollSeconds
+com.stu.signin.config.AppProperties$Backup: AppProperties$Backup(java.lang.String,long,long)
+com.stu.signin.config.AppProperties$Backup: java.lang.String toString()
+com.stu.signin.config.AppProperties$Backup: int hashCode()
+com.stu.signin.config.AppProperties$Backup: boolean equals(java.lang.Object)
+com.stu.signin.config.AppProperties$Backup: java.lang.String dir()
+com.stu.signin.config.AppProperties$Backup: long idleSeconds()
+com.stu.signin.config.AppProperties$Backup: long pollSeconds()
+com.stu.signin.config.AppProperties$Jwt
+com.stu.signin.config.AppProperties$Jwt: java.lang.String secret
+com.stu.signin.config.AppProperties$Jwt: long expiresSeconds
+com.stu.signin.config.AppProperties$Jwt: AppProperties$Jwt(java.lang.String,long)
+com.stu.signin.config.AppProperties$Jwt: java.lang.String toString()
+com.stu.signin.config.AppProperties$Jwt: int hashCode()
+com.stu.signin.config.AppProperties$Jwt: boolean equals(java.lang.Object)
+com.stu.signin.config.AppProperties$Jwt: java.lang.String secret()
+com.stu.signin.config.AppProperties$Jwt: long expiresSeconds()
+com.stu.signin.config.JacksonConfig
+com.stu.signin.config.WebConfig
+com.stu.signin.logging.CrawlerDetector
+com.stu.signin.logging.CrawlerDetector$Session
+com.stu.signin.logging.CrawlerDetector$Session: java.lang.String flag
+com.stu.signin.logging.CrawlerDetector$Session: long time
+com.stu.signin.logging.CrawlerDetector$Session: CrawlerDetector$Session(java.lang.String,long)
+com.stu.signin.logging.CrawlerDetector$Session: java.lang.String toString()
+com.stu.signin.logging.CrawlerDetector$Session: int hashCode()
+com.stu.signin.logging.CrawlerDetector$Session: boolean equals(java.lang.Object)
+com.stu.signin.logging.CrawlerDetector$Session: java.lang.String flag()
+com.stu.signin.logging.CrawlerDetector$Session: long time()
+com.stu.signin.logging.RequestLogFilter
+com.stu.signin.persistence.DbWriteTracker
+com.stu.signin.persistence.DbWriter
+com.stu.signin.security.AuthGuard
+com.stu.signin.security.AuthGuard$User
+com.stu.signin.security.AuthGuard$User: java.lang.String userId
+com.stu.signin.security.AuthGuard$User: java.lang.Integer role
+com.stu.signin.security.AuthGuard$User: AuthGuard$User(java.lang.String,java.lang.Integer)
+com.stu.signin.security.AuthGuard$User: java.lang.String toString()
+com.stu.signin.security.AuthGuard$User: int hashCode()
+com.stu.signin.security.AuthGuard$User: boolean equals(java.lang.Object)
+com.stu.signin.security.AuthGuard$User: java.lang.String userId()
+com.stu.signin.security.AuthGuard$User: java.lang.Integer role()
+com.stu.signin.security.JwtAuthFilter
+com.stu.signin.security.JwtService
+com.stu.signin.security.JwtService$JwtFailure
+com.stu.signin.security.JwtService$ParsedToken
+com.stu.signin.security.JwtService$ParsedToken: java.util.Map claims
+com.stu.signin.security.JwtService$ParsedToken: JwtService$ParsedToken(java.util.Map)
+com.stu.signin.security.JwtService$ParsedToken: java.lang.String userId()
+com.stu.signin.security.JwtService$ParsedToken: java.lang.Integer role()
+com.stu.signin.security.JwtService$ParsedToken: java.lang.Long exp()
+com.stu.signin.security.JwtService$ParsedToken: java.lang.String toString()
+com.stu.signin.security.JwtService$ParsedToken: int hashCode()
+com.stu.signin.security.JwtService$ParsedToken: boolean equals(java.lang.Object)
+com.stu.signin.security.JwtService$ParsedToken: java.util.Map claims()
+com.stu.signin.security.JwtService$Reason
+com.stu.signin.security.JwtService$Reason: com.stu.signin.security.JwtService$Reason EXPIRED
+com.stu.signin.security.JwtService$Reason: com.stu.signin.security.JwtService$Reason INVALID
+com.stu.signin.security.JwtService$Reason: com.stu.signin.security.JwtService$Reason MISSING
+com.stu.signin.security.JwtService$Reason: com.stu.signin.security.JwtService$Reason[] $VALUES
+com.stu.signin.security.JwtService$Reason: com.stu.signin.security.JwtService$Reason[] values()
+com.stu.signin.security.JwtService$Reason: com.stu.signin.security.JwtService$Reason valueOf(java.lang.String)
+com.stu.signin.security.JwtService$Reason: JwtService$Reason(java.lang.String,int)
+com.stu.signin.security.JwtService$Reason: com.stu.signin.security.JwtService$Reason[] $values()
+com.stu.signin.security.JwtService$Reason: void <clinit>()
+com.stu.signin.security.PasswordHasher
+com.stu.signin.security.PasswordVerifier
+com.stu.signin.student.StudentController
+com.stu.signin.student.StudentService
+com.stu.signin.student.StudentService$ApiExceptionData
+com.stu.signin.sync.SnapshotService
+com.stu.signin.sync.SnapshotService$EventPair
+com.stu.signin.sync.SnapshotService$EventPair: java.lang.String studentNo
+com.stu.signin.sync.SnapshotService$EventPair: java.util.Map event
+com.stu.signin.sync.SnapshotService$EventPair: SnapshotService$EventPair(java.lang.String,java.util.Map)
+com.stu.signin.sync.SnapshotService$EventPair: java.lang.String toString()
+com.stu.signin.sync.SnapshotService$EventPair: int hashCode()
+com.stu.signin.sync.SnapshotService$EventPair: boolean equals(java.lang.Object)
+com.stu.signin.sync.SnapshotService$EventPair: java.lang.String studentNo()
+com.stu.signin.sync.SnapshotService$EventPair: java.util.Map event()
+com.stu.signin.sync.SyncAdminController
+com.stu.signin.sync.SyncClient
+com.stu.signin.sync.SyncClient$SyncHttpException
+com.stu.signin.sync.SyncConfig
+com.stu.signin.sync.SyncConfig$SyncPeer
+com.stu.signin.sync.SyncConfig$SyncPeer: java.lang.String code
+com.stu.signin.sync.SyncConfig$SyncPeer: java.lang.String name
+com.stu.signin.sync.SyncConfig$SyncPeer: java.lang.String protocol
+com.stu.signin.sync.SyncConfig$SyncPeer: java.lang.String baseUrl
+com.stu.signin.sync.SyncConfig$SyncPeer: java.lang.String token
+com.stu.signin.sync.SyncConfig$SyncPeer: SyncConfig$SyncPeer(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String)
+com.stu.signin.sync.SyncConfig$SyncPeer: java.lang.String toString()
+com.stu.signin.sync.SyncConfig$SyncPeer: int hashCode()
+com.stu.signin.sync.SyncConfig$SyncPeer: boolean equals(java.lang.Object)
+com.stu.signin.sync.SyncConfig$SyncPeer: java.lang.String code()
+com.stu.signin.sync.SyncConfig$SyncPeer: java.lang.String name()
+com.stu.signin.sync.SyncConfig$SyncPeer: java.lang.String protocol()
+com.stu.signin.sync.SyncConfig$SyncPeer: java.lang.String baseUrl()
+com.stu.signin.sync.SyncConfig$SyncPeer: java.lang.String token()
+com.stu.signin.sync.SyncContract$ValidationResult
+com.stu.signin.sync.SyncContract$ValidationResult: boolean valid
+com.stu.signin.sync.SyncContract$ValidationResult: java.lang.String reason
+com.stu.signin.sync.SyncContract$ValidationResult: SyncContract$ValidationResult(boolean,java.lang.String)
+com.stu.signin.sync.SyncContract$ValidationResult: java.lang.String toString()
+com.stu.signin.sync.SyncContract$ValidationResult: int hashCode()
+com.stu.signin.sync.SyncContract$ValidationResult: boolean equals(java.lang.Object)
+com.stu.signin.sync.SyncContract$ValidationResult: boolean valid()
+com.stu.signin.sync.SyncContract$ValidationResult: java.lang.String reason()
+com.stu.signin.sync.SyncController
+com.stu.signin.sync.SyncInitializer
+com.stu.signin.sync.SyncStore
+com.stu.signin.sync.SyncStore$Candidate
+com.stu.signin.sync.SyncStore$Candidate: java.lang.String kind
+com.stu.signin.sync.SyncStore$Candidate: java.lang.String id
+com.stu.signin.sync.SyncStore$Candidate: java.lang.String originSite
+com.stu.signin.sync.SyncStore$Candidate: java.lang.String originRecordId
+com.stu.signin.sync.SyncStore$Candidate: java.time.LocalDateTime signTime
+com.stu.signin.sync.SyncStore$Candidate: java.lang.String studentName
+com.stu.signin.sync.SyncStore$Candidate: java.lang.Integer attendanceStatus
+com.stu.signin.sync.SyncStore$Candidate: java.lang.String alignKey
+com.stu.signin.sync.SyncStore$Candidate: SyncStore$Candidate(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.time.LocalDateTime,java.lang.String,java.lang.Integer,java.lang.String)
+com.stu.signin.sync.SyncStore$Candidate: java.lang.String toString()
+com.stu.signin.sync.SyncStore$Candidate: int hashCode()
+com.stu.signin.sync.SyncStore$Candidate: boolean equals(java.lang.Object)
+com.stu.signin.sync.SyncStore$Candidate: java.lang.String kind()
+com.stu.signin.sync.SyncStore$Candidate: java.lang.String id()
+com.stu.signin.sync.SyncStore$Candidate: java.lang.String originSite()
+com.stu.signin.sync.SyncStore$Candidate: java.lang.String originRecordId()
+com.stu.signin.sync.SyncStore$Candidate: java.time.LocalDateTime signTime()
+com.stu.signin.sync.SyncStore$Candidate: java.lang.String studentName()
+com.stu.signin.sync.SyncStore$Candidate: java.lang.Integer attendanceStatus()
+com.stu.signin.sync.SyncStore$Candidate: java.lang.String alignKey()
+com.stu.signin.sync.SyncStore$CrossSign
+com.stu.signin.sync.SyncStore$CrossSign: java.lang.String originSite
+com.stu.signin.sync.SyncStore$CrossSign: java.time.LocalDateTime signTime
+com.stu.signin.sync.SyncStore$CrossSign: java.lang.String studentNo
+com.stu.signin.sync.SyncStore$CrossSign: java.lang.Integer attendanceStatus
+com.stu.signin.sync.SyncStore$CrossSign: SyncStore$CrossSign(java.lang.String,java.time.LocalDateTime,java.lang.String,java.lang.Integer)
+com.stu.signin.sync.SyncStore$CrossSign: java.lang.String toString()
+com.stu.signin.sync.SyncStore$CrossSign: int hashCode()
+com.stu.signin.sync.SyncStore$CrossSign: boolean equals(java.lang.Object)
+com.stu.signin.sync.SyncStore$CrossSign: java.lang.String originSite()
+com.stu.signin.sync.SyncStore$CrossSign: java.time.LocalDateTime signTime()
+com.stu.signin.sync.SyncStore$CrossSign: java.lang.String studentNo()
+com.stu.signin.sync.SyncStore$CrossSign: java.lang.Integer attendanceStatus()
+com.stu.signin.sync.SyncStore$IngestResult
+com.stu.signin.sync.SyncStore$IngestResult: java.util.List accepted
+com.stu.signin.sync.SyncStore$IngestResult: java.util.List duplicated
+com.stu.signin.sync.SyncStore$IngestResult: java.util.List rejected
+com.stu.signin.sync.SyncStore$IngestResult: SyncStore$IngestResult(java.util.List,java.util.List,java.util.List)
+com.stu.signin.sync.SyncStore$IngestResult: java.util.Map toMap()
+com.stu.signin.sync.SyncStore$IngestResult: java.lang.String toString()
+com.stu.signin.sync.SyncStore$IngestResult: int hashCode()
+com.stu.signin.sync.SyncStore$IngestResult: boolean equals(java.lang.Object)
+com.stu.signin.sync.SyncStore$IngestResult: java.util.List accepted()
+com.stu.signin.sync.SyncStore$IngestResult: java.util.List duplicated()
+com.stu.signin.sync.SyncStore$IngestResult: java.util.List rejected()
+com.stu.signin.sync.SyncStore$LocalCourse
+com.stu.signin.sync.SyncStore$LocalCourse: java.lang.String className
+com.stu.signin.sync.SyncStore$LocalCourse: java.lang.String courseName
+com.stu.signin.sync.SyncStore$LocalCourse: SyncStore$LocalCourse(java.lang.String,java.lang.String)
+com.stu.signin.sync.SyncStore$LocalCourse: java.lang.String toString()
+com.stu.signin.sync.SyncStore$LocalCourse: int hashCode()
+com.stu.signin.sync.SyncStore$LocalCourse: boolean equals(java.lang.Object)
+com.stu.signin.sync.SyncStore$LocalCourse: java.lang.String className()
+com.stu.signin.sync.SyncStore$LocalCourse: java.lang.String courseName()
+com.stu.signin.sync.SyncStore$OutboundBatch
+com.stu.signin.sync.SyncStore$OutboundBatch: java.util.List events
+com.stu.signin.sync.SyncStore$OutboundBatch: long nextCursor
+com.stu.signin.sync.SyncStore$OutboundBatch: SyncStore$OutboundBatch(java.util.List,long)
+com.stu.signin.sync.SyncStore$OutboundBatch: java.lang.String toString()
+com.stu.signin.sync.SyncStore$OutboundBatch: int hashCode()
+com.stu.signin.sync.SyncStore$OutboundBatch: boolean equals(java.lang.Object)
+com.stu.signin.sync.SyncStore$OutboundBatch: java.util.List events()
+com.stu.signin.sync.SyncStore$OutboundBatch: long nextCursor()
+com.stu.signin.sync.SyncStore$TaskContext
+com.stu.signin.sync.SyncStore$TaskContext: java.lang.String taskId
+com.stu.signin.sync.SyncStore$TaskContext: java.lang.String classId
+com.stu.signin.sync.SyncStore$TaskContext: java.time.LocalDateTime courseDate
+com.stu.signin.sync.SyncStore$TaskContext: java.lang.String period
+com.stu.signin.sync.SyncStore$TaskContext: SyncStore$TaskContext(java.lang.String,java.lang.String,java.time.LocalDateTime,java.lang.String)
+com.stu.signin.sync.SyncStore$TaskContext: java.lang.String toString()
+com.stu.signin.sync.SyncStore$TaskContext: int hashCode()
+com.stu.signin.sync.SyncStore$TaskContext: boolean equals(java.lang.Object)
+com.stu.signin.sync.SyncStore$TaskContext: java.lang.String taskId()
+com.stu.signin.sync.SyncStore$TaskContext: java.lang.String classId()
+com.stu.signin.sync.SyncStore$TaskContext: java.time.LocalDateTime courseDate()
+com.stu.signin.sync.SyncStore$TaskContext: java.lang.String period()
+com.stu.signin.sync.SyncStore$TaskStat
+com.stu.signin.sync.SyncStore$TaskStat: int signedCount
+com.stu.signin.sync.SyncStore$TaskStat: int[] counts
+com.stu.signin.sync.SyncStore$TaskStat: SyncStore$TaskStat(int,int[])
+com.stu.signin.sync.SyncStore$TaskStat: int count(int)
+com.stu.signin.sync.SyncStore$TaskStat: java.lang.String toString()
+com.stu.signin.sync.SyncStore$TaskStat: int hashCode()
+com.stu.signin.sync.SyncStore$TaskStat: boolean equals(java.lang.Object)
+com.stu.signin.sync.SyncStore$TaskStat: int signedCount()
+com.stu.signin.sync.SyncStore$TaskStat: int[] counts()
+com.stu.signin.sync.SyncWorker
+com.stu.signin.sync.SyncWorker$CachedCheck
+com.stu.signin.sync.SyncWorker$CachedCheck: long time
+com.stu.signin.sync.SyncWorker$CachedCheck: com.stu.signin.sync.SyncWorker$DuplicateCheck check
+com.stu.signin.sync.SyncWorker$CachedCheck: SyncWorker$CachedCheck(long,com.stu.signin.sync.SyncWorker$DuplicateCheck)
+com.stu.signin.sync.SyncWorker$CachedCheck: java.lang.String toString()
+com.stu.signin.sync.SyncWorker$CachedCheck: int hashCode()
+com.stu.signin.sync.SyncWorker$CachedCheck: boolean equals(java.lang.Object)
+com.stu.signin.sync.SyncWorker$CachedCheck: long time()
+com.stu.signin.sync.SyncWorker$CachedCheck: com.stu.signin.sync.SyncWorker$DuplicateCheck check()
+com.stu.signin.sync.SyncWorker$DuplicateCheck
+com.stu.signin.sync.SyncWorker$DuplicateCheck: java.util.Map hit
+com.stu.signin.sync.SyncWorker$DuplicateCheck: java.util.List warnings
+com.stu.signin.sync.SyncWorker$DuplicateCheck: SyncWorker$DuplicateCheck(java.util.Map,java.util.List)
+com.stu.signin.sync.SyncWorker$DuplicateCheck: java.lang.String toString()
+com.stu.signin.sync.SyncWorker$DuplicateCheck: int hashCode()
+com.stu.signin.sync.SyncWorker$DuplicateCheck: boolean equals(java.lang.Object)
+com.stu.signin.sync.SyncWorker$DuplicateCheck: java.util.Map hit()
+com.stu.signin.sync.SyncWorker$DuplicateCheck: java.util.List warnings()
+com.stu.signin.sync.SyncWorker$OutboxItem
+com.stu.signin.sync.SyncWorker$OutboxItem: long id
+com.stu.signin.sync.SyncWorker$OutboxItem: java.util.Map event
+com.stu.signin.sync.SyncWorker$OutboxItem: int retryCount
+com.stu.signin.sync.SyncWorker$OutboxItem: SyncWorker$OutboxItem(long,java.util.Map,int)
+com.stu.signin.sync.SyncWorker$OutboxItem: java.lang.String toString()
+com.stu.signin.sync.SyncWorker$OutboxItem: int hashCode()
+com.stu.signin.sync.SyncWorker$OutboxItem: boolean equals(java.lang.Object)
+com.stu.signin.sync.SyncWorker$OutboxItem: long id()
+com.stu.signin.sync.SyncWorker$OutboxItem: java.util.Map event()
+com.stu.signin.sync.SyncWorker$OutboxItem: int retryCount()
+com.stu.signin.system.SystemController
+com.stu.signin.system.SystemService
+com.stu.signin.teacher.TeacherController
+com.stu.signin.teacher.TeacherService
+com.stu.signin.teacher.TeacherService$TaskRow
+com.stu.signin.teacher.TeacherService$TaskRow: java.util.Map raw
+com.stu.signin.teacher.TeacherService$TaskRow: java.lang.String taskId
+com.stu.signin.teacher.TeacherService$TaskRow: java.lang.String classId
+com.stu.signin.teacher.TeacherService$TaskRow: java.time.LocalDateTime courseDate
+com.stu.signin.teacher.TeacherService$TaskRow: java.lang.String courseTime
+com.stu.signin.teacher.TeacherService$TaskRow: int totalCount
+com.stu.signin.teacher.TeacherService$TaskRow: TeacherService$TaskRow(java.util.Map,java.lang.String,java.lang.String,java.time.LocalDateTime,java.lang.String,int)
+com.stu.signin.teacher.TeacherService$TaskRow: java.lang.String toString()
+com.stu.signin.teacher.TeacherService$TaskRow: int hashCode()
+com.stu.signin.teacher.TeacherService$TaskRow: boolean equals(java.lang.Object)
+com.stu.signin.teacher.TeacherService$TaskRow: java.util.Map raw()
+com.stu.signin.teacher.TeacherService$TaskRow: java.lang.String taskId()
+com.stu.signin.teacher.TeacherService$TaskRow: java.lang.String classId()
+com.stu.signin.teacher.TeacherService$TaskRow: java.time.LocalDateTime courseDate()
+com.stu.signin.teacher.TeacherService$TaskRow: java.lang.String courseTime()
+com.stu.signin.teacher.TeacherService$TaskRow: int totalCount()

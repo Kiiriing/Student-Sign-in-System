@@ -1,0 +1,47 @@
+server:
+  port: 5000
+  tomcat:
+    threads:
+      max: 200
+    max-connections: 8192
+    accept-count: 200
+
+spring:
+  application:
+    name: student-signin-backend
+  main:
+    banner-mode: off
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/student_signin?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true&zeroDateTimeBehavior=convertToNull
+    username: root
+    password: "123456"
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      pool-name: student-signin-pool
+      maximum-pool-size: 50
+      minimum-idle: 10
+      connection-timeout: 10000
+      validation-timeout: 5000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-test-query: SELECT 1
+
+app:
+  jwt:
+    secret: student-signin-jwt-secret-2026
+    expires-seconds: 604800
+  log:
+    dir: logs
+  backup:
+    dir: "${APP_BACKUP_DIR:d:/stu_v2/main/sql}"
+    idle-seconds: 1800
+    poll-seconds: 60
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: WARN
+    com.zaxxer.hikari: WARN

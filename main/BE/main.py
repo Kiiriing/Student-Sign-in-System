@@ -626,11 +626,41 @@ def log_request_end(response):
 # 全局 JWT 错误处理
 # =========================================
 
+def _log_jwt_failure(reason):
+    """
+    记录 Token 被拒的具体原因
+
+    三种 401（未携带 / 无效 / 过期）在请求日志里都只有 STATUS=401，
+    事后无法区分。这里在拒绝的当下单独落一条 [JWT] 日志，
+    排查「学生端三个接口同时 401」这类问题时可直接看出是哪一种。
+    """
+
+    try:
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ip = get_client_ip()
+        ua = (request.headers.get("User-Agent", "-") or "-")[:120]
+
+        write_log(
+            f"[{now}] [JWT] IP={ip} "
+            f"{request.method} {request.path} "
+            f"REASON={reason} UA={ua}"
+        )
+        print(
+            f"[{now}] [JWT] {ip} {request.method} {request.path} REASON={reason}",
+            flush=True
+        )
+    except Exception:
+        # 日志失败不影响 401 响应本身
+        pass
+
+
 @jwt.unauthorized_loader
 def unauthorized_callback(error):
     """
     请求没有携带 JWT Token
     """
+
+    _log_jwt_failure("未携带令牌（缺少 Authorization 头）")
 
     return jsonify({
         "code": 401,
@@ -641,8 +671,10 @@ def unauthorized_callback(error):
 @jwt.invalid_token_loader
 def invalid_token_callback(error):
     """
-    JWT Token 无效
+    JWT Token 无效（签名不匹配 / 格式错误 / 字段缺失）
     """
+
+    _log_jwt_failure(f"令牌无效：{error}")
 
     return jsonify({
         "code": 401,
@@ -655,6 +687,19 @@ def expired_token_callback(jwt_header, jwt_payload):
     """
     JWT Token 已过期
     """
+
+    # exp 是 Unix 时间戳，转成本地时间便于直接和登录时间对照
+    exp = jwt_payload.get("exp")
+    exp_text = str(exp)
+    if exp:
+        try:
+            exp_text = datetime.fromtimestamp(exp).strftime("%Y-%m-%d %H:%M:%S")
+        except Exception:
+            exp_text = str(exp)
+
+    _log_jwt_failure(
+        f"令牌已过期 exp={exp_text} sub={jwt_payload.get('sub')}"
+    )
 
     return jsonify({
         "code": 401,

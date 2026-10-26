@@ -2,7 +2,7 @@
 
 一个面向高校课堂的 **学生签到 / 考勤管理** 系统，采用前后端分离架构：
 
-- **后端**：Python + Flask + MySQL，提供 RESTful API，JWT 鉴权；
+- **后端**：Python + Flask + MySQL，提供 RESTful API，JWT 鉴权；另提供接口一致的 Java 25 + Spring Boot 版（见第 14 节）；
 - **前端**：Vue 3 + Vite + TypeScript，按角色（学生 / 教师 / 管理员）提供独立工作台。
 
 系统覆盖「教师发起签到 → 学生限时签到 → 教师核对名册与补录 → 统计分析」的完整考勤闭环，并内置**设备限制**与**反作弊（脚本 / 爬虫）检测**机制。
@@ -24,6 +24,7 @@
 - [11. 日志说明](#11-日志说明)
 - [12. 调试与测试脚本](#12-调试与测试脚本)
 - [13. 注意事项](#13-注意事项)
+- [14. Java 版后端（BE_Java）](#14-java-版后端be_java)
 
 ---
 
@@ -121,6 +122,11 @@ stu_v2/
     │   │   └── api.py            # 同步接口 /api/sync/*
     │   ├── debug_jwt.py          # JWT 调试脚本
     │   └── logs/                 # 按天写入的请求日志（YYYY-MM-DD.log）
+    ├── BE_Java/                  # 后端（Java 25 + Spring Boot，接口与 BE 一致）
+    │   ├── pom.xml               # Maven 构建（含 ProGuard 混淆）
+    │   ├── proguard.conf         # 混淆规则
+    │   ├── src/main/resources/   # application.yml、logback-spring.xml
+    │   └── target/               # 构建产物 student-signin-backend.jar
     ├── FE/                       # 前端（Vue 3 + Vite）
     │   ├── index.html            # 入口 HTML（标题：学生签到系统）
     │   ├── vite.config.ts        # 开发服务器 0.0.0.0:5173 + 产物分包
@@ -679,3 +685,121 @@ npm run preview  # 预览构建产物
 5. 签到迟到宽限期固定为 **10 分钟**，如需调整需同时修改 `api/student.py` 与 `api/teacher.py` 中的 SQL。
 6. 删除课程 / 班级 / 任务会通过外键 **级联删除** 关联的签到任务与记录，操作前请确认。
 7. 前端 `dist/` 为构建产物，可部署到 Nginx 等静态服务器；部署后需保证前端能访问后端 `:5000`。
+
+---
+
+## 14. Java 版后端（BE_Java）
+
+### 14.1 定位
+
+`main/BE_Java` 是 Flask 版后端（`main/BE`）的 Java 重写实现。REST 接口路径、请求 / 响应结构与第 6 节完全一致，**前端代码无需任何修改**；默认同样监听 `5000` 端口，二者任选其一运行即可。
+
+### 14.2 技术栈
+
+| 组件 | 版本 / 说明 |
+| --- | --- |
+| Java | 25（class 文件 69.0） |
+| Spring Boot | 4.1.1（Web、JDBC） |
+| 数据库连接 | HikariCP（`maximum-pool-size` 50） |
+| MySQL 驱动 | mysql-connector-j |
+| JSON | Jackson 2.19.2（Spring Boot 4 默认 Jackson 3，此处显式引入 2） |
+| 密码哈希 | BouncyCastle 1.78.1（兼容 Werkzeug `scrypt` 哈希，可直接校验旧密码） |
+| 并发 | Spring 虚拟线程（`spring.threads.virtual.enabled`） |
+| 构建 | Maven + spring-boot-maven-plugin + ProGuard 7.10 |
+
+### 14.3 目录结构
+
+```
+main/BE_Java/src/main/java/com/stu/signin
+├── auth/        登录、JWT 签发（/api/auth）
+├── admin/       管理员维护（/api/admin）
+├── teacher/     教师签到管理（/api/teacher）
+├── student/     学生签到（/api/student）
+├── system/      系统公告（/api/system）
+├── sync/        跨站同步：配置、客户端、快照、Worker、接口
+├── backup/      数据库空闲自动备份
+├── security/    JWT 过滤器、密码哈希与校验
+├── persistence/ 数据库写入与写操作追踪
+├── logging/     请求日志过滤器、爬虫识别
+├── config/      AppProperties、Web / Jackson 配置
+└── common/      统一响应体 Api、全局异常处理
+```
+
+### 14.4 配置（src/main/resources/application.yml）
+
+- 端口：`5000`
+- 数据库：`jdbc:mysql://127.0.0.1:3306/student_signin`，账号 `root` / 密码 `123456`
+- JWT：`app.jwt.secret`，有效期 `604800` 秒（7 天，与 Flask 版一致）
+- 自动备份：目录 `d:/stu_v2/main/sql`，空闲 `1800` 秒后触发，每 `60` 秒轮询
+- 日志目录：`logs`（规则见 `logback-spring.xml`）
+- 虚拟线程：已开启
+
+跨站同步参数通过环境变量覆盖，默认值与 Python 版一致：
+
+| 环境变量 | 说明 |
+| --- | --- |
+| `SYNC_SITE_CODE` | 本站标识，默认 `site_local` |
+| `SYNC_SITE_NAME` | 本站名称，默认「本站签到」 |
+| `SYNC_BASE_URL_SITE_A` / `SYNC_TOKEN_SITE_A` | A 站地址与令牌（`snapshot` 协议） |
+| `SYNC_BASE_URL_SITE_B` / `SYNC_TOKEN_SITE_B` | B 站地址与令牌（`contract` 协议） |
+
+### 14.5 构建与运行（PowerShell）
+
+环境要求：**JDK 25**（本机已配置 `JAVA_HOME=D:\Java`）、Maven 3.9+、MySQL 8。
+
+开发运行：
+
+```powershell
+cd d:\stu_v2\main\BE_Java
+mvn spring-boot:run
+```
+
+打包（含 ProGuard 混淆，混淆依赖 `${java.home}/jmods`，必须用 JDK 25 打包）：
+
+```powershell
+mvn clean package
+```
+
+运行产物：
+
+```powershell
+java -jar "d:\stu_v2\main\BE_Java\target\student-signin-backend.jar"
+```
+
+### 14.6 接口
+
+业务接口与第 6 节完全一致（`/api/auth`、`/api/student`、`/api/teacher`、`/api/admin`、`/api/system`），另外提供同步与运维接口：
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/sync/health` | 同步健康检查 |
+| GET | `/api/sync/export` | 导出同步数据 |
+| GET | `/api/sync/download` | 下载快照 |
+| POST | `/api/sync/import` | 导入同步数据 |
+| POST | `/api/sync/inbound/push` | 接收对端推送 |
+| GET | `/api/sync/inbound/pull` | 供对端拉取 |
+| POST | `/api/sync/check-dup` | 重复签到校验 |
+| POST | `/api/sync/reconcile` | 触发对账 |
+| GET | `/api/admin/sync/status` | 同步状态 |
+| GET | `/api/admin/sync/outbox` | 待发送队列 |
+| POST | `/api/admin/sync/outbox/retry` | 重试发送 |
+| GET | `/api/admin/sync/conflicts` | 冲突列表 |
+| POST | `/api/admin/sync/conflicts/handle` | 处理单条冲突 |
+| POST | `/api/admin/sync/conflicts/batch` | 批量处理冲突 |
+| POST | `/api/admin/sync/trigger` | 手动触发同步 |
+
+### 14.7 与 Flask 版的差异
+
+| 项 | Flask 版（BE） | Java 版（BE_Java） |
+| --- | --- | --- |
+| 运行依赖 | Python 3.9+ / Flask | JDK 25 / Spring Boot |
+| 监听端口 | 5000 | 5000（相同） |
+| 数据库 | `student_signin` | 共用同一套库 |
+| 数据库备份 | `core/backup.py` | `backup/BackupService`（`mysqldump`，`student_signin{MMDD}_{HHMM}.sql`，每天保留一份） |
+| 代码保护 | 无 | ProGuard 混淆（发布包类名会被重命名） |
+
+注意事项：
+
+1. 两个后端不能同时监听 `5000`，切换前先停掉另一个；
+2. 混淆后线上异常堆栈的类名不可读，排查时需对照混淆前的构建产物；
+3. 两版 JWT 密钥与有效期相同，切换后端通常无需重新登录。
